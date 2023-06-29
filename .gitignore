@@ -1,0 +1,7 @@
+.vscode
+build
+_build*
+glmenu*
+SDL2_win32
+SDL2.dll
+data/msdf-atlas-gen.*
