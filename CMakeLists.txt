@@ -9,10 +9,16 @@ endif ()
 
 add_executable (glmenu
     src/main.cpp
+    src/app.cpp
+    src/glad.c
 )
 
 if (WIN32)
+    target_sources (glmenu PRIVATE
+        src/utf8.manifest
+    )
     target_link_libraries (glmenu PRIVATE SDL2main)
+    set_target_properties (glmenu PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
 else ()
     find_package (Threads REQUIRED)
     target_link_libraries (glmenu PUBLIC Threads::Threads m)
