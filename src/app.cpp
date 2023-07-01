@@ -12,8 +12,10 @@ bool GLMenuApp::init() {
 void GLMenuApp::shutdown() {
 }
 
-void GLMenuApp::draw() {
-    printf("--draw--\n");
+void GLMenuApp::draw(double t) {
+    if (m_framesRequested > 0) { --m_framesRequested; }
+    printf("-- draw t=%.2f --\n", t);
+
     glClear(GL_COLOR_BUFFER_BIT);
 }
 

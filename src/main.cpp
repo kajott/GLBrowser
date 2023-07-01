@@ -38,15 +38,12 @@ namespace FTSource {
 
 class FakeTypematic {
     GLMenuApp& m_app;
-    bool m_fired;
     uint16_t m_buttons;
     Uint64 m_timeouts[14];
     void fireEvent(int button);
 public:
-    inline FakeTypematic(GLMenuApp& app) : m_app(app), m_fired(false), m_buttons(0u) {}
+    inline FakeTypematic(GLMenuApp& app) : m_app(app), m_buttons(0u) {}
     inline bool buttonsPressed() { return (m_buttons != 0u); }
-    inline bool eventsFired() { return m_fired; }
-    inline void resetEventFiredFlag() { m_fired = false; }
     void setState(int button, bool state);
     inline void setAxis(int axis, Sint16 value) {
         setState(axis,     (value < -AnalogSensitivity));
@@ -71,7 +68,6 @@ void FakeTypematic::fireEvent(int button) {
             default: break;
         }
     }
-    m_fired = true;
     m_timeouts[button] = SDL_GetTicks64() + TypematicDelay;
 }
 
@@ -160,25 +156,20 @@ int main(int argc, char* argv[]) {
     SDL_GameControllerEventState(SDL_ENABLE);
     FakeTypematic typematic(app);
 
-    bool wait = false;
     while (app.active()) {
-        SDL_Event ev;
-        if (!wait) {  // in input polling loop
-            wait = !SDL_PollEvent(&ev);
-        } else if (typematic.buttonsPressed()) {  // waiting for event, but buttons are pressed
-            SDL_Delay(10);
-            wait = !SDL_PollEvent(&ev);
-        } else {  // waiting for event (general)
-            wait = !SDL_WaitEvent(&ev);
+        // wait for events, if we need to
+        if (!app.framesRequested()) {
+            if (typematic.buttonsPressed()) {
+                do {
+                    SDL_Delay(10);
+                } while (!SDL_PollEvent(nullptr) && typematic.buttonsPressed() && !typematic.update());
+            } else { SDL_WaitEvent(nullptr); }
         }
 
-        if (wait && (!typematic.buttonsPressed() || typematic.eventsFired())) {
-            // no event in queue and not waiting
-            app.draw();
-            SDL_GL_SwapWindow(win);
-            typematic.resetEventFiredFlag();
-        } else if (!wait) {
-            // event in queue
+        // event processing loop
+        typematic.update();
+        SDL_Event ev;
+        while (SDL_PollEvent(&ev)) {
             switch (ev.type) {
                 case SDL_KEYDOWN:
                     switch (ev.key.keysym.sym) {
@@ -244,9 +235,12 @@ int main(int argc, char* argv[]) {
                     break;
                 default:
                     break;
-            }
-        }
-        if (typematic.update()) { wait = false; }
+            }   // END switch (ev.type)
+        }   // END while (SDL_PollEvent())
+
+        // finally, draw the app
+        app.draw(double(SDL_GetPerformanceCounter()) / double(SDL_GetPerformanceFrequency()));
+        SDL_GL_SwapWindow(win);
     }
 
     SDL_GL_MakeCurrent(nullptr, nullptr);

@@ -11,12 +11,15 @@ enum class AppEvent {
 
 class GLMenuApp {
     bool m_active = true;
+    int m_framesRequested = 1;
 
 public:
     bool init();
     void shutdown();
-    void draw();
+    void draw(double t);
     void handleEvent(AppEvent ev);
-    inline void quit()   { m_active = false; }
-    inline bool active() { return m_active; }
+    inline void quit() { m_active = false; }
+    inline bool active() const { return m_active; }
+    inline int framesRequested() const { return m_framesRequested; }
+    inline int requestFrame(int frames=1) { if (frames > m_framesRequested) { m_framesRequested = frames; } }
 };
