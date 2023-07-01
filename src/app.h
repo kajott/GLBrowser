@@ -1,5 +1,7 @@
 #pragma once
 
+#include "renderer.h"
+
 
 enum class AppEvent {
     Left, Right, Up, Down,
@@ -12,8 +14,11 @@ enum class AppEvent {
 class GLMenuApp {
     bool m_active = true;
     int m_framesRequested = 1;
+    TextBoxRenderer m_renderer;
 
 public:
+    inline GLMenuApp() {}
+
     bool init();
     void shutdown();
     void draw(double t);

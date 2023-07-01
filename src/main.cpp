@@ -126,8 +126,8 @@ int main(int argc, char* argv[]) {
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,   0);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,  SDL_GL_CONTEXT_PROFILE_CORE);
 
     SDL_GLContext glctx = SDL_GL_CreateContext(win);
@@ -142,6 +142,11 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "FATAL: failed to import OpenGL functions - %s\n", SDL_GetError());
         return 1;
     }
+    #ifdef _DEBUG
+        printf("OpenGL version:  %s\n", glGetString(GL_VERSION));
+        printf("OpenGL vendor:   %s\n", glGetString(GL_VENDOR));
+        printf("OpenGL renderer: %s\n", glGetString(GL_RENDERER));
+    #endif
 
     static GLMenuApp app;
     if (!app.init()) {
