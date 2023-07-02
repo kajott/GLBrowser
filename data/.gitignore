@@ -1,0 +1,8 @@
+*.ttf
+msdf-atlas-gen*
+
+font_*.bin
+font_hist.txt
+
+font.json
+font.png

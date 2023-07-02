@@ -12,6 +12,7 @@ add_executable (glmenu
     src/app.cpp
     src/renderer.cpp
     src/glad.c
+    data/font_tex.c
 )
 
 if (WIN32)
