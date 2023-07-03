@@ -10,9 +10,11 @@
 #include "renderer.h"
 #include "font_data.h"
 
-///////////////////////////////////////////////////////////////////////////////
-
+constexpr uint32_t GlyphCacheMin = 32u;
+constexpr uint32_t GlyphCacheMax = 255u;
 constexpr int BatchSize = 1024;  // must be 16384 or less
+
+///////////////////////////////////////////////////////////////////////////////
 
 static const char* vsSrc =
      "#version 330"
@@ -207,6 +209,7 @@ bool TextBoxRenderer::init() {
     glFlush(); glFinish();
     ::free(texBuffer);
 
+    m_glyphCache = static_cast<int*>(::calloc(GlyphCacheMax - GlyphCacheMin + 1u, sizeof(int)));
     return true;
 }
 
@@ -218,17 +221,6 @@ void TextBoxRenderer::viewportChanged() {
 }
 
 void TextBoxRenderer::flush() {
-
-// HACK: font texture demo
-Vertex* v = newVertices(1, 560, 0, 1280, 720);
-v[0].color = v[1].color = v[2].color = v[3].color = 0xFFFFFFFF;
-v[0].br[0] = v[1].br[0] = v[2].br[0] = v[3].br[0] = 0.0f;
-v[0].br[1] = v[1].br[1] = v[2].br[1] = v[3].br[1] = 1.0f;
-v[0].tc[0] = 0.0f;  v[0].tc[1] = 0.0f;
-v[1].tc[0] = 1.0f;  v[1].tc[1] = 0.0f;
-v[2].tc[0] = 0.0f;  v[2].tc[1] = 1.0f;
-v[3].tc[0] = 1.0f;  v[3].tc[1] = 1.0f;
-
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
     glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -247,6 +239,7 @@ void TextBoxRenderer::shutdown() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);          glDeleteBuffers(1, &m_vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);  glDeleteBuffers(1, &m_ibo);
     glUseProgram(0);                           glDeleteProgram(m_prog);
+    ::free(static_cast<void*>(m_glyphCache));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -316,4 +309,82 @@ void TextBoxRenderer::contourBox(int x0, int y0, int x1, int y1, uint32_t colorU
     }
     box(x0 + cInner, y0 + cInner, x1 - cInner, y1 - cInner,
         colorUpper | 0xFF000000u, colorLower | 0xFF000000u, borderRadius - cInner);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+const FontData::Glyph* TextBoxRenderer::getGlyph(uint32_t codepoint) {
+    if (!codepoint) { return nullptr; }
+    if ((codepoint < 32u) || (codepoint == 0xFFFD)) { return &FontData::GlyphData[FontData::FallbackGlyphIndex]; }
+    if ((codepoint >= GlyphCacheMin) && (codepoint <= GlyphCacheMax) && m_glyphCache && m_glyphCache[codepoint - GlyphCacheMin])
+        { return &FontData::GlyphData[m_glyphCache[codepoint - GlyphCacheMin] - 1]; }
+
+    // binary search in glyph list
+    int foundIndex = 0;
+    int a = 0, b = FontData::NumGlyphs;
+    while (b > (a + 1)) {
+        int c = (a + b) >> 1;
+        if (FontData::GlyphData[c].codepoint == codepoint) { foundIndex = c + 1; break; }
+        if (FontData::GlyphData[c].codepoint > codepoint) { b = c; } else { a = c; }
+    }
+    if (FontData::GlyphData[a].codepoint == codepoint) { foundIndex = a + 1; }
+    if (!foundIndex) { foundIndex = FontData::FallbackGlyphIndex + 1; }
+    if ((codepoint >= GlyphCacheMin) && (codepoint <= GlyphCacheMax) && m_glyphCache)
+        { m_glyphCache[codepoint - GlyphCacheMin] = foundIndex; }
+    return &FontData::GlyphData[foundIndex - 1];
+}
+
+uint32_t TextBoxRenderer::nextCodepoint(const char* &utf8string) {
+    if (!utf8string || !utf8string[0]) { return 0u; }
+    uint32_t cp = uint8_t(*utf8string++);
+    if      (cp < 0x80) { return cp; }      // 7-bit ASCII byte
+    else if (cp < 0xC0) { return 0xFFFD; }  // unexpected continuation byte
+    int ecb = 0;  // ECB = "expected continuation bytes"
+    if      (cp < 0xE0) { ecb = 1;  cp &= 0x1F; }
+    else if (cp < 0xF0) { ecb = 2;  cp &= 0x0F; }
+    else if (cp < 0xF8) { ecb = 3;  cp &= 0x07; }
+    else { return 0xFFFD; }  // invalid UTF-8 sequence
+    while (ecb--) {
+        uint8_t byte = uint8_t(*utf8string);
+        if ((byte & 0xC0) != 0x80) { return 0xFFFD; }  // truncated UTF-8 sequence; keep the offending byte
+        ++utf8string;  // *now* consume the byte
+        cp = (cp << 6) | byte;
+    }
+    return cp;
+}
+
+float TextBoxRenderer::textWidth(const char* text) {
+    float w = 0.0f;
+    const FontData::Glyph* g;
+    while ((g = getGlyph(nextCodepoint(text)))) { w += g->advance; }
+    return w;
+}
+
+void TextBoxRenderer::text(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower) {
+    switch (align & Align::HMask) {
+        case Align::Center:   x -= size * textWidth(text) * 0.5f; break;
+        case Align::Right:    x -= size * textWidth(text);        break;
+        default: break;
+    }
+    switch (align & Align::VMask) {
+        case Align::Middle:   y -= size * 0.5f;                   break;
+        case Align::Bottom:   y -= size;                          break;
+        case Align::Baseline: y -= size * FontData::Baseline;     break;
+        default: break;
+    }
+    const FontData::Glyph* g;
+    while ((g = getGlyph(nextCodepoint(text)))) {
+        if (!g->space) {
+            Vertex* v = newVertices(1, x + g->pos.x0 * size, y + g->pos.y0 * size, x + g->pos.x1 * size, y + g->pos.y1 * size);
+            v[0].color = v[1].color = colorUpper;
+            v[2].color = v[3].color = colorLower;
+            v[0].br[0] = v[1].br[0] = v[2].br[0] = v[3].br[0] = 0.0f;
+            v[0].br[1] = v[1].br[1] = v[2].br[1] = v[3].br[1] = 1.33f;
+            v[0].tc[0] = g->tc.x0;  v[0].tc[1] = g->tc.y0;
+            v[1].tc[0] = g->tc.x1;  v[1].tc[1] = g->tc.y0;
+            v[2].tc[0] = g->tc.x0;  v[2].tc[1] = g->tc.y1;
+            v[3].tc[0] = g->tc.x1;  v[3].tc[1] = g->tc.y1;
+        }
+        x += g->advance * size;
+    }
 }

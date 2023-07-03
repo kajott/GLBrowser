@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from PIL import Image
+import json
 import math
 
 IMAGE_PREDICTOR = "bloom"
@@ -104,6 +105,13 @@ def decode_data(data):
 ###############################################################################
 
 if __name__ == "__main__":
+    with open("font.json") as f:
+        data = json.load(f)
+    metrics = data['metrics']
+    mscale = 1 / metrics['lineHeight']
+    mbase  = metrics['ascender'] * mscale
+    glyphs = { g['unicode']: g for g in data['glyphs'] }
+
     img = Image.open("font.png")
     raw = b''
     enc = b''
@@ -137,13 +145,48 @@ if __name__ == "__main__":
             logbar = "#" * int(math.log(nlin) / maxloghist * 31 + 1.0) if nlin else ""
             f.write(f"${x:02X} | {nlin:6d}x |{linbar:<32} |{logbar}\n")
 
+    w, h = img.size
+    order = sorted(glyphs)
+    for cp in (0xFFFD, ord('?')):
+        if cp in order:
+            fgi = order.index(cp)
+            break
+
     with open("font_data.cpp", 'w') as f:
         f.write("// This file has been generated automatically, DO NOT EDIT!\n\n")
         f.write('#include "font_data.h"\n\n')
-        f.write("namespace FontData {\n")
-        f.write(f"const int TexWidth    = {img.size[0]:6};\n")
-        f.write(f"const int TexHeight   = {img.size[1]:6};\n")
-        f.write(f"const int TexDataSize = {len(enc):6};\n")
+        f.write("namespace FontData {\n\n")
+        f.write(f"const int TexWidth           = {w:6};\n")
+        f.write(f"const int TexHeight          = {h:6};\n")
+        f.write(f"const int TexDataSize        = {len(enc):6};\n\n")
+        f.write(f"const int NumGlyphs          = {len(glyphs):6};\n")
+        f.write(f"const int FallbackGlyphIndex = {fgi:6};\n")
+        f.write(f"const float Baseline         = {mbase:.6f}f;\n\n")
+
+        f.write("const Glyph GlyphData[] = {\n")
+        for cp in order:
+            g = glyphs[cp]
+            adv = g['advance'] * mscale
+            p = g.get('planeBounds')
+            if p:
+                px0 =         p['left']   * mscale
+                py0 = mbase - p['top']    * mscale
+                px1 =         p['right']  * mscale
+                py1 = mbase - p['bottom'] * mscale
+            else:
+                px0, py0, px1, py1 = 4*[0]
+            t = g.get('atlasBounds')
+            if t:
+                tx0 =     t['left']
+                ty0 = h - t['top']
+                tx1 =     t['right']
+                ty1 = h - t['bottom']
+            else:
+                tx0, ty0, tx1, ty1 = 4*[0]
+            space = "false," if (t and p) else "true, "
+            f.write(f"    {{ 0x{cp:08X}, {adv:8.6f}f, {space} {{{px0:9.6f}f,{py0:9.6f}f,{px1:9.6f}f,{py1:9.6f}f }}, {{{tx0:6.1f}f/{w},{ty0:6.1f}f/{h},{tx1:6.1f}f/{w},{ty1:6.1f}f/{h} }} }},\n")
+        f.write("};\n\n")
+
         f.write("const uint8_t TexData[] = {")
         comma = ""
         BPL = (254 - 4) // 5

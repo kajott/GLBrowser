@@ -4,6 +4,21 @@
 
 #include "glad.h"
 
+#include "font_data.h"
+
+//! text alignment constants
+namespace Align {
+    constexpr uint8_t Left     = 0x00;  //!< horizontally left-aligned
+    constexpr uint8_t Center   = 0x01;  //!< horizontally centered
+    constexpr uint8_t Right    = 0x02;  //!< horizontally right-aligned
+    constexpr uint8_t Top      = 0x00;  //!< vertically top-aligned (text is *below* indicated point)
+    constexpr uint8_t Middle   = 0x10;  //!< vertically centered
+    constexpr uint8_t Bottom   = 0x20;  //!< vertically bottom-aligned (text is *above* indicated point)
+    constexpr uint8_t Baseline = 0x30;  //!< vertically baseline-aligned (indicated point is at text baseline)
+    constexpr uint8_t HMask    = 0x0F;  //!< \private horizontal alignment mask
+    constexpr uint8_t VMask    = 0xF0;  //!< \private vertical alignment mask
+};
+
 //! a renderer that can draw two things: MSDF text, or rounded boxes
 class TextBoxRenderer {
     float m_vpScaleX, m_vpScaleY;
@@ -13,6 +28,7 @@ class TextBoxRenderer {
     GLuint m_prog;
     GLuint m_tex;
     int m_quadCount;
+    int* m_glyphCache;
 
     struct Vertex {
         float pos[2];    // screen position (already transformed into NDC)
@@ -28,6 +44,9 @@ class TextBoxRenderer {
     Vertex* newVertices();
     Vertex* newVertices(uint8_t mode, float x0, float y0, float x1, float y1);
     Vertex* newVertices(uint8_t mode, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1);
+
+    const FontData::Glyph* getGlyph(uint32_t codepoint);
+    static uint32_t nextCodepoint(const char* &utf8string);
 
 public:
     bool init();
@@ -51,4 +70,11 @@ public:
 
     inline void circle(int x, int y, int r, uint32_t color, float blur=1.0f, float offset=0.0f)
         { box(x - r, y - r, x + r, y + r, color, color, r, blur, offset); }
+
+    float textWidth(const char* text);
+    void text(float x, float y,
+              float size,
+              const char* text,
+              uint8_t align = Align::Left + Align::Top,
+              uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF);
 };
