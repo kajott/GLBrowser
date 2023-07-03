@@ -26,5 +26,5 @@ public:
     inline void quit() { m_active = false; }
     inline bool active() const { return m_active; }
     inline int framesRequested() const { return m_framesRequested; }
-    inline int requestFrame(int frames=1) { if (frames > m_framesRequested) { m_framesRequested = frames; } }
+    inline void requestFrame(int frames=1) { if (frames > m_framesRequested) { m_framesRequested = frames; } }
 };

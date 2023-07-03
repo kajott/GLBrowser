@@ -1,4 +1,6 @@
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 
 #include <new>
 #include <algorithm>
@@ -6,6 +8,7 @@
 #include "glad.h"
 
 #include "renderer.h"
+#include "font_data.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -18,12 +21,14 @@ static const char* vsSrc =
 "\n" "layout(location=2) in vec3 aSize;  flat out vec3 vSize;"
 "\n" "layout(location=3) in vec2 aBR;    flat out vec2 vBR;"
 "\n" "layout(location=4) in vec4 aColor;      out vec4 vColor;"
+"\n" "layout(location=5) in uint aMode;  flat out uint vMode;"
 "\n" "void main() {"
 "\n" "    gl_Position = vec4(aPos, 0., 1.);"
 "\n" "    vTC    = aTC;"
 "\n" "    vSize  = aSize;"
 "\n" "    vBR    = aBR;"
 "\n" "    vColor = aColor;"
+"\n" "    vMode  = aMode;"
 "\n" "}"
 "\n";
 
@@ -33,14 +38,20 @@ static const char* fsSrc =
 "\n" "flat in vec3 vSize;"
 "\n" "flat in vec2 vBR;"
 "\n" "     in vec4 vColor;"
+"\n" "flat in uint vMode;"
+"\n" "uniform sampler2D uTex;"
 "\n" "layout(location=0) out vec4 outColor;"
 "\n" "void main() {"
-"\n" "    float d;"
-"\n" "    if (true) {  // box mode"
+"\n" "    float d = 0.;"
+"\n" "    if (vMode == 0u) {  // box mode"
 "\n" "        vec2 p = abs(vTC) - vSize.xy;"
 "\n" "        d = (min(p.x, p.y) > (-vSize.z))"
 "\n" "          ? (vSize.z - length(p + vec2(vSize.z)))"
 "\n" "          : min(-p.x, -p.y);"
+"\n" "    } else { // text mode"
+"\n" "        vec3 s = texture(uTex, vTC).rgb;"
+"\n" "        d = max(min(s.r, s.g), min(max(s.r, s.g), s.b)) - 0.5;"
+"\n" "        d /= fwidth(d);"
 "\n" "    }"
 "\n" "    outColor = vec4(vColor.rgb, vColor.a * clamp((d - vBR.x) * vBR.y + 0.5, 0.0, 1.0));"
 "\n" "}"
@@ -55,6 +66,7 @@ bool TextBoxRenderer::init() {
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
     glBufferData(GL_ARRAY_BUFFER, BatchSize * 4 * sizeof(Vertex), nullptr, GL_STREAM_DRAW);
     m_vertices = nullptr;
+    m_quadCount = 0;
 
     glGenVertexArrays(1, &m_vao);
     glBindVertexArray(m_vao);
@@ -64,11 +76,13 @@ bool TextBoxRenderer::init() {
     glEnableVertexAttribArray(2);
     glEnableVertexAttribArray(3);
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(0, 2, GL_FLOAT,        GL_FALSE, sizeof(Vertex), &(static_cast<Vertex*>(0)->pos[0]));
-    glVertexAttribPointer(1, 2, GL_FLOAT,        GL_FALSE, sizeof(Vertex), &(static_cast<Vertex*>(0)->tc[0]));
-    glVertexAttribPointer(2, 3, GL_FLOAT,        GL_FALSE, sizeof(Vertex), &(static_cast<Vertex*>(0)->size[0]));
-    glVertexAttribPointer(3, 2, GL_FLOAT,        GL_FALSE, sizeof(Vertex), &(static_cast<Vertex*>(0)->br[0]));
-    glVertexAttribPointer(4, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), &(static_cast<Vertex*>(0)->color));
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer (0, 2, GL_FLOAT,        GL_FALSE, sizeof(Vertex), &(static_cast<Vertex*>(0)->pos[0]));
+    glVertexAttribPointer (1, 2, GL_FLOAT,        GL_FALSE, sizeof(Vertex), &(static_cast<Vertex*>(0)->tc[0]));
+    glVertexAttribPointer (2, 3, GL_FLOAT,        GL_FALSE, sizeof(Vertex), &(static_cast<Vertex*>(0)->size[0]));
+    glVertexAttribPointer (3, 2, GL_FLOAT,        GL_FALSE, sizeof(Vertex), &(static_cast<Vertex*>(0)->br[0]));
+    glVertexAttribPointer (4, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), &(static_cast<Vertex*>(0)->color));
+    glVertexAttribIPointer(5, 1, GL_UNSIGNED_INT,           sizeof(Vertex), &(static_cast<Vertex*>(0)->mode));
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -149,7 +163,50 @@ bool TextBoxRenderer::init() {
     glDeleteShader(fs);
     glDeleteShader(vs);
 
-    m_quadCount = 0;
+    int texStride = FontData::TexWidth * 3;
+    int texSize = FontData::TexHeight * texStride;
+    int texOffset = texStride + 16;
+    void *texBuffer = ::calloc(texSize + texOffset, 1);
+    if (!texBuffer) { return false; }
+    uint8_t* texImg = &(static_cast<uint8_t*>(texBuffer))[texOffset];
+    const uint8_t* dataPos = FontData::TexData;
+    for (int c = 0;  c < 3;  ++c) {
+        int texPos = c;
+        while (texPos < texSize) {
+            // zero run
+            int length = *dataPos++;
+            texPos += length * 3;
+            if (texPos >= texSize) { break; }
+            // literal run
+            length = *dataPos++;
+            while ((length--) && (texPos < texSize)) {
+                texImg[texPos] = *dataPos++;
+                texPos += 3;
+            }
+        }
+    }
+    for (int texPos = 0;  texPos < texSize;  ++texPos) {
+        int w  = texImg[texPos - 3];
+        int n  = texImg[texPos - texStride];
+        int nw = texImg[texPos - texStride - 3];
+        int p = n + w - nw;
+        p = std::max(p, std::min(std::min(n, w), nw));
+        p = std::min(p, std::max(std::max(n, w), nw));
+        texImg[texPos] += uint8_t(p);
+    }
+    //{FILE *f = fopen("abfall.ppm", "wb"); fprintf(f, "P6\n%d %d\n255\n", FontData::TexWidth, FontData::TexHeight); fwrite((const void*)texImg, texSize, 1, f); fclose(f);}
+
+    glGenTextures(1, &m_tex);
+    glBindTexture(GL_TEXTURE_2D, m_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, FontData::TexWidth, FontData::TexHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, (const void*)texImg);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glFlush(); glFinish();
+    ::free(texBuffer);
+
     return true;
 }
 
@@ -161,10 +218,22 @@ void TextBoxRenderer::viewportChanged() {
 }
 
 void TextBoxRenderer::flush() {
+
+// HACK: font texture demo
+Vertex* v = newVertices(1, 560, 0, 1280, 720);
+v[0].color = v[1].color = v[2].color = v[3].color = 0xFFFFFFFF;
+v[0].br[0] = v[1].br[0] = v[2].br[0] = v[3].br[0] = 0.0f;
+v[0].br[1] = v[1].br[1] = v[2].br[1] = v[3].br[1] = 1.0f;
+v[0].tc[0] = 0.0f;  v[0].tc[1] = 0.0f;
+v[1].tc[0] = 1.0f;  v[1].tc[1] = 0.0f;
+v[2].tc[0] = 0.0f;  v[2].tc[1] = 1.0f;
+v[3].tc[0] = 1.0f;  v[3].tc[1] = 1.0f;
+
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
     glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+    glBindTexture(GL_TEXTURE_2D, m_tex);
     glBindVertexArray(m_vao);
     glUseProgram(m_prog);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
@@ -173,6 +242,7 @@ void TextBoxRenderer::flush() {
 }
 
 void TextBoxRenderer::shutdown() {
+    glBindTexture(GL_TEXTURE_2D, 0);           glDeleteTextures(1, &m_tex);
     glBindVertexArray(0);                      glDeleteVertexArrays(1, &m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, 0);          glDeleteBuffers(1, &m_vbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);  glDeleteBuffers(1, &m_ibo);
@@ -191,32 +261,32 @@ TextBoxRenderer::Vertex* TextBoxRenderer::newVertices() {
     return &m_vertices[4 * (m_quadCount++)];
 }
 
-TextBoxRenderer::Vertex* TextBoxRenderer::newVertices(float x0, float y0, float x1, float y1) {
+TextBoxRenderer::Vertex* TextBoxRenderer::newVertices(uint8_t mode, float x0, float y0, float x1, float y1) {
     x0 = x0 * m_vpScaleX - 1.0f;
     y0 = y0 * m_vpScaleY + 1.0f;
     x1 = x1 * m_vpScaleX - 1.0f;
     y1 = y1 * m_vpScaleY + 1.0f;
     Vertex* v = newVertices();
-    v[0].pos[0] = x0;  v[0].pos[1] = y0;
-    v[1].pos[0] = x1;  v[1].pos[1] = y0;
-    v[2].pos[0] = x0;  v[2].pos[1] = y1;
-    v[3].pos[0] = x1;  v[3].pos[1] = y1;
+    v[0].pos[0] = x0;  v[0].pos[1] = y0;  v[0].mode = mode;
+    v[1].pos[0] = x1;  v[1].pos[1] = y0;  v[1].mode = mode;
+    v[2].pos[0] = x0;  v[2].pos[1] = y1;  v[2].mode = mode;
+    v[3].pos[0] = x1;  v[3].pos[1] = y1;  v[3].mode = mode;
     return v;
 }
 
-TextBoxRenderer::Vertex* TextBoxRenderer::newVertices(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1) {
-    Vertex* v = newVertices(x0, y0, x1, y1);
-    v[0].tc[0] = u0;  v[0].tc[1] = v0;
-    v[1].tc[0] = u1;  v[1].tc[1] = v0;
-    v[2].tc[0] = u0;  v[2].tc[1] = v1;
-    v[3].tc[0] = u1;  v[3].tc[1] = v1;
+TextBoxRenderer::Vertex* TextBoxRenderer::newVertices(uint8_t mode, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1) {
+    Vertex* v = newVertices(mode, x0, y0, x1, y1);
+    v[0].tc[0] = u0;  v[0].tc[1] = v0;  v[0].mode = mode;
+    v[1].tc[0] = u1;  v[1].tc[1] = v0;  v[1].mode = mode;
+    v[2].tc[0] = u0;  v[2].tc[1] = v1;  v[2].mode = mode;
+    v[3].tc[0] = u1;  v[3].tc[1] = v1;  v[3].mode = mode;
     return v;
 }
 
 void TextBoxRenderer::box(int x0, int y0, int x1, int y1, uint32_t colorUpper, uint32_t colorLower, int borderRadius, float blur, float offset) {
     float w = 0.5f * (float(x1) - float(x0));
     float h = 0.5f * (float(y1) - float(y0));
-    Vertex* v = newVertices(float(x0), float(y0), float(x1), float(y1), -w, -h, w, h);
+    Vertex* v = newVertices(0, float(x0), float(y0), float(x1), float(y1), -w, -h, w, h);
     v[0].color = v[1].color = colorUpper;
     v[2].color = v[3].color = colorLower;
     for (int i = 4;  i;  --i, ++v) {

@@ -137,15 +137,17 @@ if __name__ == "__main__":
             logbar = "#" * int(math.log(nlin) / maxloghist * 31 + 1.0) if nlin else ""
             f.write(f"${x:02X} | {nlin:6d}x |{linbar:<32} |{logbar}\n")
 
-    with open("font_tex.c", 'w') as f:
+    with open("font_data.cpp", 'w') as f:
         f.write("// This file has been generated automatically, DO NOT EDIT!\n\n")
-        f.write(f"const int FontTexWidth    = {img.size[0]:6};\n")
-        f.write(f"const int FontTexHeight   = {img.size[1]:6};\n")
-        f.write(f"const int FontTexDataSize = {len(enc):6};\n")
-        f.write("const unsigned char FontTexData[] = {")
+        f.write('#include "font_data.h"\n\n')
+        f.write("namespace FontData {\n")
+        f.write(f"const int TexWidth    = {img.size[0]:6};\n")
+        f.write(f"const int TexHeight   = {img.size[1]:6};\n")
+        f.write(f"const int TexDataSize = {len(enc):6};\n")
+        f.write("const uint8_t TexData[] = {")
         comma = ""
         BPL = (254 - 4) // 5
         for pos in range(0, len(enc), BPL):
             f.write(comma + "\n    " + ','.join(f"0x{b:02X}" for b in enc[pos : pos + BPL]))
             comma = ","
-        f.write("\n};\n")
+        f.write("\n};\n\n} // namespace FontData\n")

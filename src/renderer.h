@@ -11,22 +11,23 @@ class TextBoxRenderer {
     GLuint m_vbo;
     GLuint m_ibo;
     GLuint m_prog;
+    GLuint m_tex;
     int m_quadCount;
 
     struct Vertex {
-
         float pos[2];    // screen position (already transformed into NDC)
         float tc[2];     // texture coordinate | half-size coordinate (goes from -x/2 to x/2, with x=width or x=height)
         float size[3];   // not used | xy = half size, z = border radius
         float br[2];     // blend range: x = distance to contour (in pixels) that corresponds to middle gray, y = reciprocal of range
         uint32_t color;  // color to draw in
+        uint32_t mode;   // 0 = box, 1 = text
     };
 
     Vertex* m_vertices;
 
     Vertex* newVertices();
-    Vertex* newVertices(float x0, float y0, float x1, float y1);
-    Vertex* newVertices(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1);
+    Vertex* newVertices(uint8_t mode, float x0, float y0, float x1, float y1);
+    Vertex* newVertices(uint8_t mode, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1);
 
 public:
     bool init();

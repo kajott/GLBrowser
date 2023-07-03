@@ -12,8 +12,10 @@ add_executable (glmenu
     src/app.cpp
     src/renderer.cpp
     src/glad.c
-    data/font_tex.c
+    data/font_data.cpp
 )
+
+target_include_directories (glmenu PRIVATE "${CMAKE_CURRENT_LIST_DIR}/src")
 
 if (WIN32)
     target_sources (glmenu PRIVATE
