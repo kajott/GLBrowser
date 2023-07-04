@@ -80,7 +80,11 @@ public:
     void outlineText(float x, float y, float size, const char* text,
                      uint8_t align = Align::Left + Align::Top,
                      uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
-                     uint32_t colorOutline=0xFF000000,
-                     float outlineWidth=0.0f,
+                     uint32_t colorOutline=0xFF000000, float outlineWidth=0.0f,
                      int shadowOffset=0, float shadowBlur=0.0f, float shadowAlpha=1.0f, float shadowGrow=0.0f);
+    inline void shadowText(float x, float y, float size, const char* text,
+                           uint8_t align = Align::Left + Align::Top,
+                           uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
+                           int shadowOffset=0, float shadowBlur=0.0f, float shadowAlpha=1.0f, float shadowGrow=0.0f)
+        { outlineText(x, y, size, text, align, colorUpper, colorLower, 0, 0.0f, shadowOffset, shadowBlur, shadowAlpha, shadowGrow); }
 };
