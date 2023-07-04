@@ -47,6 +47,7 @@ class TextBoxRenderer {
 
     const FontData::Glyph* getGlyph(uint32_t codepoint);
     static uint32_t nextCodepoint(const char* &utf8string);
+    void alignText(float &x, float &y, float size, const char* text, uint8_t align);
 
 public:
     bool init();
@@ -72,9 +73,14 @@ public:
         { box(x - r, y - r, x + r, y + r, color, color, r, blur, offset); }
 
     float textWidth(const char* text);
-    void text(float x, float y,
-              float size,
-              const char* text,
+    void text(float x, float y, float size, const char* text,
               uint8_t align = Align::Left + Align::Top,
-              uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF);
+              uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
+              float blur=1.0f, float offset=0.0f);
+    void contourText(float x, float y, float size, const char* text,
+                     uint8_t align = Align::Left + Align::Top,
+                     uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
+                     uint32_t colorContour=0xFF000000,
+                     float contourWidth=0.0f,
+                     int shadowOffset=0, float shadowBlur=0.0f, float shadowAlpha=1.0f, float shadowGrow=0.0f);
 };

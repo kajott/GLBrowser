@@ -294,7 +294,7 @@ void TextBoxRenderer::contourBox(int x0, int y0, int x1, int y1, uint32_t colorU
     int cOuter = std::max(0,  contourWidth);
     int cInner = std::max(0, -contourWidth);
     if ((shadowOffset || shadowGrow) && (shadowAlpha > 0.0f)) {
-        uint32_t shadowColor = uint32_t(std::min(1.0f, std::max(0.0f, shadowAlpha)) * 255.f + .5f) << 24;
+        uint32_t shadowColor = uint32_t(std::min(1.0f, shadowAlpha) * 255.f + .5f) << 24;
         box(x0 - cOuter + shadowOffset - shadowGrow,
             y0 - cOuter + shadowOffset - shadowGrow,
             x1 + cOuter + shadowOffset + shadowGrow,
@@ -360,7 +360,7 @@ float TextBoxRenderer::textWidth(const char* text) {
     return w;
 }
 
-void TextBoxRenderer::text(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower) {
+void TextBoxRenderer::alignText(float &x, float &y, float size, const char* text, uint8_t align) {
     switch (align & Align::HMask) {
         case Align::Center:   x -= size * textWidth(text) * 0.5f; break;
         case Align::Right:    x -= size * textWidth(text);        break;
@@ -372,14 +372,18 @@ void TextBoxRenderer::text(float x, float y, float size, const char* text, uint8
         case Align::Baseline: y -= size * FontData::Baseline;     break;
         default: break;
     }
+}
+
+void TextBoxRenderer::text(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, float blur, float offset) {
+    alignText(x, y, size, text, align);
     const FontData::Glyph* g;
     while ((g = getGlyph(nextCodepoint(text)))) {
         if (!g->space) {
             Vertex* v = newVertices(1, x + g->pos.x0 * size, y + g->pos.y0 * size, x + g->pos.x1 * size, y + g->pos.y1 * size);
             v[0].color = v[1].color = colorUpper;
             v[2].color = v[3].color = colorLower;
-            v[0].br[0] = v[1].br[0] = v[2].br[0] = v[3].br[0] = 0.0f;
-            v[0].br[1] = v[1].br[1] = v[2].br[1] = v[3].br[1] = 1.33f;
+            v[0].br[0] = v[1].br[0] = v[2].br[0] = v[3].br[0] = offset;
+            v[0].br[1] = v[1].br[1] = v[2].br[1] = v[3].br[1] = 1.33f / blur;
             v[0].tc[0] = g->tc.x0;  v[0].tc[1] = g->tc.y0;
             v[1].tc[0] = g->tc.x1;  v[1].tc[1] = g->tc.y0;
             v[2].tc[0] = g->tc.x0;  v[2].tc[1] = g->tc.y1;
@@ -387,4 +391,16 @@ void TextBoxRenderer::text(float x, float y, float size, const char* text, uint8
         }
         x += g->advance * size;
     }
+}
+
+void TextBoxRenderer::contourText(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, uint32_t colorContour, float contourWidth, int shadowOffset, float shadowBlur, float shadowAlpha, float shadowGrow) {
+    alignText(x, y, size, text, align);
+    if ((shadowOffset || (shadowGrow >= 0.0f)) && (shadowAlpha > 0.0f)) {
+        uint32_t shadowColor = uint32_t(std::min(1.0f, shadowAlpha) * 255.f + .5f) << 24;
+        this->text(x + float(shadowOffset), y + float(shadowOffset), size, text, 0, shadowColor, shadowColor, shadowBlur + 1.0f, -shadowGrow);
+    }
+    if (contourWidth >= 0.0f) {
+        this->text(x, y, size, text, 0, colorContour, colorContour, 1.0f, -contourWidth);
+    }
+    this->text(x, y, size, text, 0, colorUpper, colorLower);
 }

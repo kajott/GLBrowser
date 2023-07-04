@@ -26,6 +26,7 @@ void GLMenuApp::draw(double t) {
     m_renderer.box(100, 300, 300, 500, 0x80000000, 0x80000000, 30, 15.f, 15.f);
     m_renderer.contourBox(100, 600, 1200, 700, 0xA98765, 0x876543, 0xFFFFFF, 3, 3*4, 3, 0.f, .5f);
     m_renderer.text(640, 360, 100.0f, "Hello World!", Align::Center + Align::Middle);
+    m_renderer.contourText(120, 620, 40.f, "text with shadow", 0, 0xFFFFFFFF, 0xFFFFFFFF, 0xFF404040, 0.0f, 2, 3.0f, 0.5f, 0.0f);
     m_renderer.flush();
 }
 
