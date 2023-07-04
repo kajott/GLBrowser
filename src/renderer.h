@@ -34,7 +34,7 @@ class TextBoxRenderer {
         float pos[2];    // screen position (already transformed into NDC)
         float tc[2];     // texture coordinate | half-size coordinate (goes from -x/2 to x/2, with x=width or x=height)
         float size[3];   // not used | xy = half size, z = border radius
-        float br[2];     // blend range: x = distance to contour (in pixels) that corresponds to middle gray, y = reciprocal of range
+        float br[2];     // blend range: x = distance to outline (in pixels) that corresponds to middle gray, y = reciprocal of range
         uint32_t color;  // color to draw in
         uint32_t mode;   // 0 = box, 1 = text
     };
@@ -62,10 +62,10 @@ public:
     inline void box(int x0, int y0, int x1, int y1, uint32_t color)
         { box(x0, y0, x1, y1, color, color); }
 
-    void contourBox(int x0, int y0, int x1, int y1,
+    void outlineBox(int x0, int y0, int x1, int y1,
                     uint32_t colorUpper, uint32_t colorLower,  // all colors are forced to fully opaque!
-                    uint32_t colorContour=0xFFFFFFFF,
-                    int contourWidth=0,  // positive: contour *outside* the box coords, negative: contour *inside* the box coords
+                    uint32_t colorOutline=0xFFFFFFFF,
+                    int outlineWidth=0,  // positive: outline *outside* the box coords, negative: outline *inside* the box coords
                     int borderRadius=0,
                     int shadowOffset=0, float shadowBlur=0.0f, float shadowAlpha=1.0f, int shadowGrow=0);
 
@@ -77,10 +77,10 @@ public:
               uint8_t align = Align::Left + Align::Top,
               uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
               float blur=1.0f, float offset=0.0f);
-    void contourText(float x, float y, float size, const char* text,
+    void outlineText(float x, float y, float size, const char* text,
                      uint8_t align = Align::Left + Align::Top,
                      uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
-                     uint32_t colorContour=0xFF000000,
-                     float contourWidth=0.0f,
+                     uint32_t colorOutline=0xFF000000,
+                     float outlineWidth=0.0f,
                      int shadowOffset=0, float shadowBlur=0.0f, float shadowAlpha=1.0f, float shadowGrow=0.0f);
 };

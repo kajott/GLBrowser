@@ -290,9 +290,9 @@ void TextBoxRenderer::box(int x0, int y0, int x1, int y1, uint32_t colorUpper, u
     }
 }
 
-void TextBoxRenderer::contourBox(int x0, int y0, int x1, int y1, uint32_t colorUpper, uint32_t colorLower, uint32_t colorContour, int contourWidth, int borderRadius, int shadowOffset, float shadowBlur, float shadowAlpha, int shadowGrow) {
-    int cOuter = std::max(0,  contourWidth);
-    int cInner = std::max(0, -contourWidth);
+void TextBoxRenderer::outlineBox(int x0, int y0, int x1, int y1, uint32_t colorUpper, uint32_t colorLower, uint32_t colorOutline, int outlineWidth, int borderRadius, int shadowOffset, float shadowBlur, float shadowAlpha, int shadowGrow) {
+    int cOuter = std::max(0,  outlineWidth);
+    int cInner = std::max(0, -outlineWidth);
     if ((shadowOffset || shadowGrow) && (shadowAlpha > 0.0f)) {
         uint32_t shadowColor = uint32_t(std::min(1.0f, shadowAlpha) * 255.f + .5f) << 24;
         box(x0 - cOuter + shadowOffset - shadowGrow,
@@ -303,9 +303,9 @@ void TextBoxRenderer::contourBox(int x0, int y0, int x1, int y1, uint32_t colorU
             borderRadius + cOuter + shadowGrow,
             shadowBlur + 1.0f, shadowBlur);
     }
-    if (contourWidth) {
+    if (outlineWidth) {
         box(x0 - cOuter, y0 - cOuter, x1 + cOuter, y1 + cOuter,
-            colorContour | 0xFF000000u, colorContour | 0xFF000000u, borderRadius + cOuter);
+            colorOutline | 0xFF000000u, colorOutline | 0xFF000000u, borderRadius + cOuter);
     }
     box(x0 + cInner, y0 + cInner, x1 - cInner, y1 - cInner,
         colorUpper | 0xFF000000u, colorLower | 0xFF000000u, borderRadius - cInner);
@@ -393,14 +393,14 @@ void TextBoxRenderer::text(float x, float y, float size, const char* text, uint8
     }
 }
 
-void TextBoxRenderer::contourText(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, uint32_t colorContour, float contourWidth, int shadowOffset, float shadowBlur, float shadowAlpha, float shadowGrow) {
+void TextBoxRenderer::outlineText(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, uint32_t colorOutline, float outlineWidth, int shadowOffset, float shadowBlur, float shadowAlpha, float shadowGrow) {
     alignText(x, y, size, text, align);
     if ((shadowOffset || (shadowGrow >= 0.0f)) && (shadowAlpha > 0.0f)) {
         uint32_t shadowColor = uint32_t(std::min(1.0f, shadowAlpha) * 255.f + .5f) << 24;
         this->text(x + float(shadowOffset), y + float(shadowOffset), size, text, 0, shadowColor, shadowColor, shadowBlur + 1.0f, -shadowGrow);
     }
-    if (contourWidth >= 0.0f) {
-        this->text(x, y, size, text, 0, colorContour, colorContour, 1.0f, -contourWidth);
+    if (outlineWidth >= 0.0f) {
+        this->text(x, y, size, text, 0, colorOutline, colorOutline, 1.0f, -outlineWidth);
     }
     this->text(x, y, size, text, 0, colorUpper, colorLower);
 }
