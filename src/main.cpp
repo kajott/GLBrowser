@@ -161,15 +161,18 @@ int main(int argc, char* argv[]) {
     SDL_GameControllerEventState(SDL_ENABLE);
     FakeTypematic typematic(app);
 
+    Uint64 prevTime = SDL_GetPerformanceCounter();
     while (app.active()) {
         // wait for events, if we need to
-        if (!app.framesRequested()) {
+        bool wait = !app.framesRequested();
+        if (wait) {
             if (typematic.buttonsPressed()) {
                 do {
                     SDL_Delay(10);
                 } while (!SDL_PollEvent(nullptr) && typematic.buttonsPressed() && !typematic.update());
             } else { SDL_WaitEvent(nullptr); }
         }
+        if (wait) { app.requestFrame(); }
 
         // event processing loop
         typematic.update();
@@ -185,7 +188,7 @@ int main(int argc, char* argv[]) {
                         case SDLK_RETURN:
                         case SDLK_a:      app.handleEvent(AppEvent::A);      break;
                         case SDLK_BACKSPACE:
-                        case SDLK_b:      app.handleEvent(AppEvent::A);      break;
+                        case SDLK_b:      app.handleEvent(AppEvent::B);      break;
                         case SDLK_SPACE:
                         case SDLK_x:      app.handleEvent(AppEvent::X);      break;
                         case SDLK_RSHIFT:
@@ -244,7 +247,9 @@ int main(int argc, char* argv[]) {
         }   // END while (SDL_PollEvent())
 
         // finally, draw the app
-        app.draw(double(SDL_GetPerformanceCounter()) / double(SDL_GetPerformanceFrequency()));
+        Uint64 now = SDL_GetPerformanceCounter();
+        app.draw(wait ? 0.0 : (double(now - prevTime) / double(SDL_GetPerformanceFrequency())));
+        prevTime = now;
         SDL_GL_SwapWindow(win);
     }
 

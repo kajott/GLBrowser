@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <algorithm>
+
 #include "glad.h"
 
 #include "font_data.h"
@@ -21,6 +23,7 @@ namespace Align {
 
 //! a renderer that can draw two things: MSDF text, or rounded boxes
 class TextBoxRenderer {
+    int m_vpWidth, m_vpHeight;
     float m_vpScaleX, m_vpScaleY;
     GLuint m_vao;
     GLuint m_vbo;
@@ -55,6 +58,9 @@ public:
     void viewportChanged();
     void flush();
 
+    int viewportWidth()  const { return m_vpWidth; }
+    int viewportHeight() const { return m_vpHeight; }
+
     void box(int x0, int y0, int x1, int y1,
              uint32_t colorUpper, uint32_t colorLower,
              int borderRadius=0,
@@ -74,9 +80,14 @@ public:
 
     float textWidth(const char* text);
     void text(float x, float y, float size, const char* text,
-              uint8_t align = Align::Left + Align::Top,
-              uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
+              uint8_t align,
+              uint32_t colorUpper, uint32_t colorLower,
               float blur=1.0f, float offset=0.0f);
+    inline void text(float x, float y, float size, const char* text,
+              uint8_t align = Align::Left + Align::Top,
+              uint32_t color=0xFFFFFFFF)
+              { this->text(x, y, size, text, align, color, color); }
+
     void outlineText(float x, float y, float size, const char* text,
                      uint8_t align = Align::Left + Align::Top,
                      uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
@@ -87,4 +98,7 @@ public:
                            uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
                            int shadowOffset=0, float shadowBlur=0.0f, float shadowAlpha=1.0f, float shadowGrow=0.0f)
         { outlineText(x, y, size, text, align, colorUpper, colorLower, 0, 0.0f, shadowOffset, shadowBlur, shadowAlpha, shadowGrow); }
+
+    static inline uint32_t makeAlpha(float alpha)
+        { return uint32_t(std::min(1.f, std::max(0.f, alpha)) * 255.f + .5f) << 24; }
 };

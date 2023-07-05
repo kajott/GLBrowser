@@ -12,7 +12,7 @@
 
 constexpr uint32_t GlyphCacheMin = 32u;
 constexpr uint32_t GlyphCacheMax = 255u;
-constexpr int BatchSize = 1024;  // must be 16384 or less
+constexpr int BatchSize = 4096;  // must be 16384 or less
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -216,8 +216,10 @@ bool TextBoxRenderer::init() {
 void TextBoxRenderer::viewportChanged() {
     GLint vp[4];
     glGetIntegerv(GL_VIEWPORT, vp);
-    m_vpScaleX =  2.0f / float(vp[2]);
-    m_vpScaleY = -2.0f / float(vp[3]);
+    m_vpWidth  = vp[2];
+    m_vpHeight = vp[3];
+    m_vpScaleX =  2.0f / float(m_vpWidth);
+    m_vpScaleY = -2.0f / float(m_vpHeight);
 }
 
 void TextBoxRenderer::flush() {
@@ -230,6 +232,7 @@ void TextBoxRenderer::flush() {
     glUseProgram(m_prog);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
     glDrawElements(GL_TRIANGLES, m_quadCount * 6, GL_UNSIGNED_SHORT, nullptr);
+    glFinish();
     m_quadCount = 0;
 }
 
@@ -294,7 +297,7 @@ void TextBoxRenderer::outlineBox(int x0, int y0, int x1, int y1, uint32_t colorU
     int cOuter = std::max(0,  outlineWidth);
     int cInner = std::max(0, -outlineWidth);
     if ((shadowOffset || shadowGrow) && (shadowAlpha > 0.0f)) {
-        uint32_t shadowColor = uint32_t(std::min(1.0f, shadowAlpha) * 255.f + .5f) << 24;
+        uint32_t shadowColor = makeAlpha(shadowAlpha);
         box(x0 - cOuter + shadowOffset - shadowGrow,
             y0 - cOuter + shadowOffset - shadowGrow,
             x1 + cOuter + shadowOffset + shadowGrow,
@@ -396,7 +399,7 @@ void TextBoxRenderer::text(float x, float y, float size, const char* text, uint8
 void TextBoxRenderer::outlineText(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, uint32_t colorOutline, float outlineWidth, int shadowOffset, float shadowBlur, float shadowAlpha, float shadowGrow) {
     alignText(x, y, size, text, align);
     if ((shadowOffset || (shadowGrow >= 0.0f)) && (shadowAlpha > 0.0f)) {
-        uint32_t shadowColor = uint32_t(std::min(1.0f, shadowAlpha) * 255.f + .5f) << 24;
+        uint32_t shadowColor = makeAlpha(shadowAlpha);
         this->text(x + float(shadowOffset), y + float(shadowOffset), size, text, 0, shadowColor, shadowColor, shadowBlur + 1.0f, -shadowGrow);
     }
     if (outlineWidth >= 0.0f) {

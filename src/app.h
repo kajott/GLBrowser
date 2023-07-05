@@ -1,6 +1,7 @@
 #pragma once
 
 #include "renderer.h"
+#include "dirview.h"
 
 
 enum class AppEvent {
@@ -15,13 +16,15 @@ class GLMenuApp {
     bool m_active = true;
     int m_framesRequested = 1;
     TextBoxRenderer m_renderer;
+    Geometry m_geometry;
+    DirView m_dirView;
 
 public:
-    inline GLMenuApp() {}
+    inline GLMenuApp() : m_dirView(m_renderer, m_geometry) {}
 
     bool init();
     void shutdown();
-    void draw(double t);
+    void draw(double dt);
     void handleEvent(AppEvent ev);
     inline void quit() { m_active = false; }
     inline bool active() const { return m_active; }

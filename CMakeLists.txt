@@ -10,7 +10,9 @@ endif ()
 add_executable (glmenu
     src/main.cpp
     src/app.cpp
+    src/geometry.cpp
     src/renderer.cpp
+    src/dirview.cpp
     src/glad.c
     data/font_data.cpp
 )
