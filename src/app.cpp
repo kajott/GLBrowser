@@ -45,6 +45,10 @@ void GLMenuApp::handleEvent(AppEvent ev) {
     switch (ev) {
         case AppEvent::Up:       m_dirView.moveCursor(-1, true); break;
         case AppEvent::Down:     m_dirView.moveCursor(+1, true); break;
+        case AppEvent::PageUp:   m_dirView.moveCursor(-m_geometry.itemsPerPage, true); break;
+        case AppEvent::PageDown: m_dirView.moveCursor(+m_geometry.itemsPerPage, true); break;
+        case AppEvent::Home:     m_dirView.moveCursor(0, false); break;
+        case AppEvent::End:      m_dirView.moveCursor(999999, false); break;
         case AppEvent::B:        m_dirView.pop(); break;
         case AppEvent::LS:       m_dirView.pop(); break;
         case AppEvent::RS:       m_dirView.push(); break;

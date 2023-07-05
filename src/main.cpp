@@ -181,22 +181,26 @@ int main(int argc, char* argv[]) {
             switch (ev.type) {
                 case SDL_KEYDOWN:
                     switch (ev.key.keysym.sym) {
-                        case SDLK_LEFT:   app.handleEvent(AppEvent::Left);   break;
-                        case SDLK_RIGHT:  app.handleEvent(AppEvent::Right);  break;
-                        case SDLK_UP:     app.handleEvent(AppEvent::Up);     break;
-                        case SDLK_DOWN:   app.handleEvent(AppEvent::Down);   break;
+                        case SDLK_LEFT:      app.handleEvent(AppEvent::Left);     break;
+                        case SDLK_RIGHT:     app.handleEvent(AppEvent::Right);    break;
+                        case SDLK_UP:        app.handleEvent(AppEvent::Up);       break;
+                        case SDLK_DOWN:      app.handleEvent(AppEvent::Down);     break;
+                        case SDLK_PAGEUP:    app.handleEvent(AppEvent::PageUp);   break;
+                        case SDLK_PAGEDOWN:  app.handleEvent(AppEvent::PageDown); break;
+                        case SDLK_HOME:      app.handleEvent(AppEvent::Home);     break;
+                        case SDLK_END:       app.handleEvent(AppEvent::End);      break;
                         case SDLK_RETURN:
-                        case SDLK_a:      app.handleEvent(AppEvent::A);      break;
+                        case SDLK_a:         app.handleEvent(AppEvent::A);        break;
                         case SDLK_BACKSPACE:
-                        case SDLK_b:      app.handleEvent(AppEvent::B);      break;
+                        case SDLK_b:         app.handleEvent(AppEvent::B);        break;
                         case SDLK_SPACE:
-                        case SDLK_x:      app.handleEvent(AppEvent::X);      break;
+                        case SDLK_x:         app.handleEvent(AppEvent::X);        break;
                         case SDLK_RSHIFT:
                         case SDLK_z:
-                        case SDLK_y:      app.handleEvent(AppEvent::Y);      break;
-                        case SDLK_TAB:    app.handleEvent(AppEvent::Select); break;
-                        case SDLK_ESCAPE: app.handleEvent(AppEvent::Start);  break;
-                        case SDLK_q:      app.quit();                        break;
+                        case SDLK_y:         app.handleEvent(AppEvent::Y);        break;
+                        case SDLK_TAB:       app.handleEvent(AppEvent::Select);   break;
+                        case SDLK_ESCAPE:    app.handleEvent(AppEvent::Start);    break;
+                        case SDLK_q:         app.quit();                          break;
                         default: break;
                     }
                     break;
