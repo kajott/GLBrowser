@@ -1,15 +1,8 @@
 @cd /d "%~dp0"
 @echo.
 
-@set fontfile=bahnschrift.ttf
-
-if not exist %fontfile% ( copy /b %SystemRoot%\Fonts\%fontfile% . )
-@if errorlevel 1 goto end
-
-@echo.
-
 msdf-atlas-gen.exe ^
-    -font %fontfile% ^
+    -font %SystemRoot%\Fonts\bahnschrift.ttf ^
     -charset latin1_cs.txt ^
     -type msdf ^
     -format png ^
