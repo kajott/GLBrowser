@@ -16,12 +16,15 @@ enum class AppEvent {
 class GLMenuApp {
     bool m_active = true;
     int m_framesRequested = 1;
+    bool m_haveController = false;
     TextBoxRenderer m_renderer;
     Geometry m_geometry;
     DirView m_dirView;
 
 public:
     inline GLMenuApp() : m_dirView(m_renderer, m_geometry) {}
+
+    inline void haveController() { m_haveController = true; }
 
     bool init();
     void shutdown();

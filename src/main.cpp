@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
 
     for (int i = 0;  i < SDL_NumJoysticks();  ++i) {
         if (SDL_IsGameController(i)) {
-            SDL_GameControllerOpen(i);
+            if (SDL_GameControllerOpen(i)) { app.haveController(); }
         }
     }
     SDL_GameControllerEventState(SDL_ENABLE);

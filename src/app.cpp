@@ -19,24 +19,53 @@ void GLMenuApp::shutdown() {
 }
 
 void GLMenuApp::draw(double dt) {
+    // process animations
     if (m_framesRequested > 0) { --m_framesRequested; }
-
     m_geometry.setTimeDelta(float(dt));
     if (m_dirView.animate()) { requestFrame(); }
 
+    // clear screen and draw main view
     glClear(GL_COLOR_BUFFER_BIT);
-
     m_dirView.draw();
 
-#if 0
-    m_renderer.box(700, 100, 1000, 200, 0xFFC0C0C0);
-    m_renderer.box(50, 100, 400, 200, 0xFF987654, 0xFFFEDCBA, 20);
-    m_renderer.circle(550, 150, 50, 0xFF0369CF);
-    m_renderer.box(100, 300, 300, 500, 0x80000000, 0x80000000, 30, 15.f, 15.f);
-    m_renderer.outlineBox(100, 600, 1200, 700, 0xA98765, 0x876543, 0xFFFFFF, 3, 3*4, 3, 0.f, .5f);
-    m_renderer.text(640, 360, 100.0f, "Hello World!", Align::Center + Align::Middle);
-    m_renderer.shadowText(120, 620, 40.f, "text with shadow", 0, 0xFFFFFFFF, 0xFFFFFFFF, 2, 3.0f, 0.5f);
-#endif
+    // draw title and status bar background
+    constexpr uint32_t barBackTrans = 0x404040;
+    constexpr uint32_t barBackOpaque = barBackTrans | 0xFF000000;
+    int y = 2 * m_geometry.outerMarginY + m_geometry.textSize;
+    m_renderer.box(0, 0, m_geometry.screenWidth, y, barBackOpaque);
+    m_renderer.box(0, y, m_geometry.screenWidth, y + m_geometry.gradientHeight, barBackOpaque, barBackTrans);
+    y = m_geometry.screenHeight - y;
+    m_renderer.box(0, y - m_geometry.gradientHeight, m_geometry.screenWidth, y, barBackTrans, barBackOpaque);
+    m_renderer.box(0, y, m_geometry.screenWidth, m_geometry.screenHeight, barBackOpaque);
+    y += m_geometry.outerMarginY;  // move to upper end of controls line, used below
+
+    // draw title contents
+    const char* title = m_dirView.path().c_str();
+    if (!title || !title[0]) {
+        #ifdef _WIN32
+            title = "drive selection";
+        #else
+            title = "root directory";
+        #endif
+    }
+    m_renderer.text(
+        std::min(float(m_geometry.outerMarginX),
+                 float(m_geometry.screenWidth - m_geometry.outerMarginX)
+               - float(m_geometry.textSize) * m_renderer.textWidth(title)),
+        float(m_geometry.outerMarginY), float(m_geometry.textSize), title, 0);
+
+    // draw control bar contents
+    constexpr uint32_t controlBarColor = 0xFFAAAAAA;
+    int x = m_geometry.outerMarginX;
+    if (m_haveController) {
+        x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "A", "Select", controlBarColor, barBackOpaque);
+        if (!m_dirView.path().empty()) { x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "B", "Parent Directory", controlBarColor, barBackOpaque); }
+        //x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "START", "Menu", controlBarColor, barBackOpaque);
+    } else {
+        x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Enter", "Select", controlBarColor, barBackOpaque);
+        if (!m_dirView.path().empty()) { x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Backspace", "Parent Directory", controlBarColor, barBackOpaque); }
+        x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Q", "Quit", controlBarColor, barBackOpaque);
+    }
 
     m_renderer.flush();
 }

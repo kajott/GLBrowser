@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
 
 #include <new>
 #include <algorithm>
@@ -377,7 +378,7 @@ void TextBoxRenderer::alignText(float &x, float &y, float size, const char* text
     }
 }
 
-void TextBoxRenderer::text(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, float blur, float offset) {
+float TextBoxRenderer::text(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, float blur, float offset) {
     alignText(x, y, size, text, align);
     const FontData::Glyph* g;
     while ((g = getGlyph(nextCodepoint(text)))) {
@@ -394,9 +395,10 @@ void TextBoxRenderer::text(float x, float y, float size, const char* text, uint8
         }
         x += g->advance * size;
     }
+    return x;
 }
 
-void TextBoxRenderer::outlineText(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, uint32_t colorOutline, float outlineWidth, int shadowOffset, float shadowBlur, float shadowAlpha, float shadowGrow) {
+float TextBoxRenderer::outlineText(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, uint32_t colorOutline, float outlineWidth, int shadowOffset, float shadowBlur, float shadowAlpha, float shadowGrow) {
     alignText(x, y, size, text, align);
     if ((shadowOffset || (shadowGrow >= 0.0f)) && (shadowAlpha > 0.0f)) {
         uint32_t shadowColor = makeAlpha(shadowAlpha);
@@ -405,5 +407,41 @@ void TextBoxRenderer::outlineText(float x, float y, float size, const char* text
     if (outlineWidth >= 0.0f) {
         this->text(x, y, size, text, 0, colorOutline, colorOutline, 1.0f, -outlineWidth);
     }
-    this->text(x, y, size, text, 0, colorUpper, colorLower);
+    return this->text(x, y, size, text, 0, colorUpper, colorLower);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+int TextBoxRenderer::control(int x, int y, int size, uint8_t vAlign, bool keyboard, const char* control, const char* caption, uint32_t textColor, uint32_t backgroundColor) {
+    switch (vAlign & Align::VMask) {
+        case Align::Middle:   y -= size >> 1;  break;
+        case Align::Bottom:   y -= size;  break;
+        case Align::Baseline: y -= int(float(size) * FontData::Baseline + 0.5f); break;
+        default: break;
+    }
+    if (keyboard) {
+        int border = std::max(1, size >> 3);
+        int cheight = size - 2 * border;
+        if (cheight <= 0) { return x; }
+        float cwidth = float(cheight) * textWidth(control);
+        int w = int(std::ceil(cwidth)) + 4 * border;
+        box(x, y, x + w, y + size, textColor, textColor, 2 * border);
+        box(x + border, y + border, x + w - border, y + size - border, backgroundColor, backgroundColor, border);
+        text((float(2 * x + w) - cwidth) * 0.5f, float(y + border), float(cheight), control, 0, textColor);
+        x += w;
+    } else {
+        const char *check = control;
+        nextCodepoint(check);  // ignore first glyph, select font size based on whether another is following
+        float cheight = float(size) * (nextCodepoint(check) ? 0.707f : 1.0f);
+        float cwidth = cheight * textWidth(control);
+        int w = std::max(size, int(std::ceil(cwidth + float(size) - cheight)));
+        box(x, y, x + w, y + size, textColor, textColor, size);
+        text((float(2 * x + w) - cwidth) * 0.5f, (float(2 * y + size) - cheight) * 0.5f, float(cheight), control, 0, backgroundColor);
+        x += w;
+    }
+    x += size / 3;
+    if (caption) {
+        x = int(std::ceil(text(float(x), float(y), float(size), caption, 0, textColor))) + size;
+    }
+    return x;
 }

@@ -8,11 +8,8 @@ void Geometry::update(int screenWidth_, int screenHeight_) {
     screenWidth  = screenWidth_;
     screenHeight = screenHeight_;
 
-    dirViewY0 = screenHeight / 16;
-    dirViewY1 = screenHeight - dirViewY0;
-
-    itemsPerPage = 16;
-    itemHeight = (dirViewY1 - dirViewY0) / itemsPerPage;
+    itemsPerPage = 20;
+    itemHeight = screenHeight / itemsPerPage;
 
     itemMarginY = itemHeight / 8;
     itemMarginX = itemMarginY;
@@ -26,6 +23,11 @@ void Geometry::update(int screenWidth_, int screenHeight_) {
     itemShadowOffset = itemOutlineWidth * 2;
 
     outerMarginX = itemHeight / 4;
+    outerMarginY = itemHeight / 6;
+    gradientHeight = itemHeight / 4;
+
+    dirViewY0 = textSize + 3 * outerMarginY + gradientHeight;
+    dirViewY1 = screenHeight - dirViewY0;
 }
 
 void Geometry::setTimeDelta(float dt) {

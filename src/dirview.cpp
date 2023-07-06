@@ -152,7 +152,7 @@ void DirView::push() {
     if (!current.isdir) { return; }
     if (current.name.empty()) { pop(); return; }
     m_panels.back().deactivate();
-    m_panels.push_back(DirPanel(*this, "dummy", m_panels.back().endX()));
+    m_panels.push_back(DirPanel(*this, path() + "/" + current.name, m_panels.back().endX()));
     updateScroll();
 }
 

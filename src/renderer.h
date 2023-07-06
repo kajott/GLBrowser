@@ -79,25 +79,29 @@ public:
         { box(x - r, y - r, x + r, y + r, color, color, r, blur, offset); }
 
     float textWidth(const char* text);
-    void text(float x, float y, float size, const char* text,
+    float text(float x, float y, float size, const char* text,
               uint8_t align,
               uint32_t colorUpper, uint32_t colorLower,
               float blur=1.0f, float offset=0.0f);
-    inline void text(float x, float y, float size, const char* text,
+    inline float text(float x, float y, float size, const char* text,
               uint8_t align = Align::Left + Align::Top,
               uint32_t color=0xFFFFFFFF)
-              { this->text(x, y, size, text, align, color, color); }
+              { return this->text(x, y, size, text, align, color, color); }
 
-    void outlineText(float x, float y, float size, const char* text,
+    float outlineText(float x, float y, float size, const char* text,
                      uint8_t align = Align::Left + Align::Top,
                      uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
                      uint32_t colorOutline=0xFF000000, float outlineWidth=0.0f,
                      int shadowOffset=0, float shadowBlur=0.0f, float shadowAlpha=1.0f, float shadowGrow=0.0f);
-    inline void shadowText(float x, float y, float size, const char* text,
+    inline float shadowText(float x, float y, float size, const char* text,
                            uint8_t align = Align::Left + Align::Top,
                            uint32_t colorUpper=0xFFFFFFFF, uint32_t colorLower=0xFFFFFFFF,
                            int shadowOffset=0, float shadowBlur=0.0f, float shadowAlpha=1.0f, float shadowGrow=0.0f)
-        { outlineText(x, y, size, text, align, colorUpper, colorLower, 0, 0.0f, shadowOffset, shadowBlur, shadowAlpha, shadowGrow); }
+        { return outlineText(x, y, size, text, align, colorUpper, colorLower, 0, 0.0f, shadowOffset, shadowBlur, shadowAlpha, shadowGrow); }
+
+    int control(int x, int y, int size, uint8_t vAlign, bool keyboard,
+                const char* control, const char* caption=nullptr,
+                uint32_t textColor=0xFFFFFFFF, uint32_t backgroundColor=0xFF000000);
 
     static inline uint32_t makeAlpha(float alpha)
         { return uint32_t(std::min(1.f, std::max(0.f, alpha)) * 255.f + .5f) << 24; }
