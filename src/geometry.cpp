@@ -24,6 +24,8 @@ void Geometry::update(int screenWidth_, int screenHeight_) {
     itemOutlineOffset = itemOutlineWidth / 2;
     itemBorderRadius = itemMarginY;
     itemShadowOffset = itemOutlineWidth * 2;
+
+    outerMarginX = itemHeight / 4;
 }
 
 void Geometry::setTimeDelta(float dt) {

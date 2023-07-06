@@ -109,15 +109,23 @@ int DirPanel::animate() {
 void DirView::navigate(const std::string& path) {
     m_panels.clear();
     m_panels.push_back(DirPanel(*this, path, 0));
+    m_xScroll = -m_geometry.outerMarginX;
     updateScroll();
+    m_animXOffset = float(-m_xScroll);
 }
 
 void DirView::updateScroll() {
-    if (m_panels.empty()) {
-        m_xScroll = 0;
-    } else {
-        m_xScroll = std::max(0, m_panels.back().endX() - m_geometry.screenWidth);
+    // compute xScroll value for when the current panel is maximally left- and right-aligned
+    int scrollL = m_panels.back().startX() - m_geometry.outerMarginX;
+    int scrollR = m_panels.back().endX() - m_geometry.screenWidth + m_geometry.outerMarginX;
+    // if we need to scroll left, try to center the current panel first
+    if (m_xScroll > scrollL) {
+        m_xScroll = (m_panels.back().startX() + m_panels.back().endX() - m_geometry.screenWidth) >> 1;
     }
+    // if we still need to fit things, fit to right then left
+    // (so that panels which are wider than the screen are shown left-aligned)
+    if (m_xScroll < scrollR) { m_xScroll = scrollR; }
+    if (m_xScroll > scrollL) { m_xScroll = scrollL; }
 }
 
 int DirView::animate() {

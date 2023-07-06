@@ -6,6 +6,8 @@ struct Geometry {
     int screenWidth;
     int screenHeight;
 
+    int outerMarginX;
+
     int dirViewY0;
     int dirViewY1;
 
