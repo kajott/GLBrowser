@@ -107,10 +107,15 @@ def decode_data(data):
 if __name__ == "__main__":
     with open("font.json") as f:
         data = json.load(f)
-    metrics = data['metrics']
+    metrics = data.get('metrics') or data['variants'][0]['metrics']
     mscale = 1 / metrics['lineHeight']
     mbase  = metrics['ascender'] * mscale
-    glyphs = { g['unicode']: g for g in data['glyphs'] }
+    if 'variants' in data:
+        glyphs = {}
+        for var in data['variants']:
+            glyphs.update({ g['unicode']: g for g in var['glyphs'] })
+    else:
+        glyphs = { g['unicode']: g for g in data['glyphs'] }
 
     img = Image.open("font.png")
     raw = b''

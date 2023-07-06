@@ -16,7 +16,7 @@ struct DirItem {
     std::string display;
     bool operator< (const DirItem& other) const;
     inline const std::string& displayText() const { return display.empty() ? name : display; }
-    inline DirItem(const std::string& name_, bool isdir_) : name(name_), isdir(isdir_), display(isdir_ ? (name_ + " \xC2\xBB") : "") {}
+    inline DirItem(const std::string& name_, bool isdir_) : name(name_), isdir(isdir_), display(isdir_ ? (name_ + " \xE2\x96\xBA") : "") {}
     inline DirItem(const std::string& name_, bool isdir_, const std::string& display_) : name(name_), isdir(isdir_), display(display_) {}
 };
 

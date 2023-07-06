@@ -39,7 +39,7 @@ DirPanel::DirPanel(DirView& parent, const std::string& path, int x0, bool active
 {
     float w = 0.0f;
     bool isSubdir = !path.empty();
-    if (isSubdir) { m_items.push_back(DirItem("", true, "\xC2\xAB back")); }
+    if (isSubdir) { m_items.push_back(DirItem("", true, "\xE2\x97\x84 back")); }
 
     int maxlen = (rand() % 32) + 2;
     for (int i = (rand() % 42);  i;  --i) {
