@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "renderer.h"
+#include "sysutil.h"
 #include "dirview.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -32,36 +33,55 @@ bool DirItem::operator< (const DirItem& other) const {
     return (*s2 != 0);
 }
 
+bool DirItem::operator== (const std::string& other) const {
+    const char* s1 = name.c_str();
+    const char* s2 = other.c_str();
+    while (*s1 && *s2) {
+        uint8_t c1 = uint8_t(*s1++);
+        uint8_t c2 = uint8_t(*s2++);
+        if ((c1 >= 'a') && (c1 <= 'z')) { c1 -= 'a' - 'A'; }
+        if ((c2 >= 'a') && (c2 <= 'z')) { c2 -= 'a' - 'A'; }
+        if (c1 != c2) { return false; }
+    }
+    return (*s1 == *s2) || (!*s1 && ispathsep(*s2) && !s2[1]) || (!*s2 && ispathsep(*s1) && !s1[1]);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
-DirPanel::DirPanel(DirView& parent, const std::string& path, int x0, bool active)
+DirPanel::DirPanel(DirView& parent, const std::string& path, int x0, bool active, const std::string& preselect)
     : m_parent(parent), m_geometry(parent.m_geometry), m_path(path), m_active(active), m_cursor(0), m_x0(x0)
 {
-    float w = 0.0f;
-    bool isSubdir = !path.empty();
-    if (isSubdir) { m_items.push_back(DirItem("", true, "\xE2\x97\x84 back")); }
+    bool isSubdir = !IsRoot(path);
+    if (isSubdir) {
+        m_items.push_back(DirItem("", true, "\xE2\x97\x84 back"));
+    }
+    ScanDirectory(path.c_str(), [&] (const char* name, bool isdir) {
+        m_items.push_back(DirItem(name, isdir));
+    });
+    std::sort(m_items.begin() + (isSubdir ? 1 : 0), m_items.end());
 
-    int maxlen = (rand() % 32) + 2;
-    for (int i = (rand() % 42);  i;  --i) {
-        char name[64], *npos = name;
-        static const char *gamut = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz +-_";
-        for (int j = (rand() % maxlen) + 7;  j;  --j) {
-            *npos++ = gamut[rand() % strlen(gamut)];
-        }
-        *npos = '\0';
-        m_items.push_back(DirItem(name, ((rand() & 1) == 0)));
-        w = std::max(w, m_parent.m_renderer.textWidth(m_items.back().displayText().c_str()));
+    float w = 0.0f;
+    for (const auto& item : m_items) {
+        w = std::max(w, m_parent.m_renderer.textWidth(item.displayText().c_str()));
     }
 
-    std::sort(m_items.begin() + (isSubdir ? 1 : 0), m_items.end());
+    if (!preselect.empty()) {
+        for (int i = 0;  i < int(m_items.size());  ++i) {
+            if (m_items[i] == preselect) {
+                m_cursor = i;
+                break;
+            }
+        }
+    }
 
     m_width = 2 * m_geometry.panelMarginX
             + 2 * m_geometry.itemMarginX
             + int(std::ceil(w * float(m_geometry.textSize)));
     m_y0 = m_geometry.dirViewY0;
-    m_animY0 = float(m_y0);
-    m_animActive = (m_active ? 1.0f : 0.0f);
-    m_animCursorY = 0.0f;
+    moveCursor(0, true);
+    m_animY0      = float(m_y0);
+    m_animActive  = (m_active ? 1.0f : 0.0f);
+    m_animCursorY = float(m_cursor * m_geometry.itemHeight);
 }
 
 void DirPanel::draw(float xOffset) {
@@ -107,8 +127,46 @@ int DirPanel::animate() {
 ///////////////////////////////////////////////////////////////////////////////
 
 void DirView::navigate(const std::string& path) {
+    // split path into components
+    struct PathComponent {
+        std::string dir;
+        std::string preselect;
+        inline PathComponent(const std::string& dir_, const std::string& preselect_="") : dir(dir_), preselect(preselect_) {}
+    };
+    std::vector<PathComponent> pathComponents;
+    if (IsRoot(path) || !PathExists(path)) {
+        pathComponents.push_back(PathComponent(rootDir));
+    } else {
+        if (IsFile(path)) {
+            pathComponents.push_back(PathComponent(PathDirName(path), PathBaseName(path)));
+        } else {
+            pathComponents.push_back(PathComponent(path));
+        }
+        while (!IsRoot(pathComponents.back().dir)) {
+            const auto& dir = pathComponents.back().dir;
+            pathComponents.push_back(PathComponent(PathDirName(dir), PathBaseName(dir)));
+        }
+        #ifdef _WIN32
+            // special case: ensure we find the drive name component as a
+            // preselect entry
+            int last = int(pathComponents.size()) - 1;
+            if ((last > 0) && pathComponents[last].preselect.empty()) {
+                pathComponents[last].preselect = pathComponents[last - 1].dir;
+            }
+        #endif
+    }
+
+    // populate panels
     m_panels.clear();
-    m_panels.push_back(DirPanel(*this, path, 0));
+    int x = 0;
+    while (!pathComponents.empty()) {
+        const auto& pc = pathComponents.back();
+        m_panels.push_back(DirPanel(*this, pc.dir, x, (pathComponents.size() <= 1u), pc.preselect));
+        x = m_panels.back().endX();
+        pathComponents.pop_back();
+    }
+
+    // update geometry
     m_xScroll = -m_geometry.outerMarginX;
     updateScroll();
     m_animXOffset = float(-m_xScroll);
@@ -152,7 +210,7 @@ void DirView::push() {
     if (!current.isdir) { return; }
     if (current.name.empty()) { pop(); return; }
     m_panels.back().deactivate();
-    m_panels.push_back(DirPanel(*this, path() + "/" + current.name, m_panels.back().endX()));
+    m_panels.push_back(DirPanel(*this, PathJoin(path(), current.name), m_panels.back().endX()));
     updateScroll();
 }
 

@@ -26,7 +26,7 @@ public:
 
     inline void haveController() { m_haveController = true; }
 
-    bool init();
+    bool init(const char* initial);
     void shutdown();
     void draw(double dt);
     void handleEvent(AppEvent ev);

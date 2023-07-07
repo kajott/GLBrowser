@@ -2,15 +2,17 @@
 
 #include "glad.h"
 
+#include "sysutil.h"
+
 #include "app.h"
 
-bool GLMenuApp::init() {
+bool GLMenuApp::init(const char *initial) {
     glClearColor(0.125f, 0.25f, 0.375f, 1.0f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     if (!m_renderer.init()) { return false; }
     m_geometry.update(m_renderer.viewportWidth(), m_renderer.viewportHeight());
-    m_dirView.navigate("");
+    m_dirView.navigate(initial ? initial : GetCurrentDir());
     return true;
 }
 
@@ -41,13 +43,7 @@ void GLMenuApp::draw(double dt) {
 
     // draw title contents
     const char* title = m_dirView.path().c_str();
-    if (!title || !title[0]) {
-        #ifdef _WIN32
-            title = "drive selection";
-        #else
-            title = "root directory";
-        #endif
-    }
+    if (!title || !title[0]) { title = "drive selection"; }
     m_renderer.text(
         std::min(float(m_geometry.outerMarginX),
                  float(m_geometry.screenWidth - m_geometry.outerMarginX)

@@ -13,6 +13,7 @@ add_executable (glmenu
     src/geometry.cpp
     src/renderer.cpp
     src/dirview.cpp
+    src/sysutil.cpp
     src/glad.c
     data/font_data.cpp
 )

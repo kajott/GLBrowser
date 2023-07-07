@@ -98,8 +98,6 @@ bool FakeTypematic::update() {
 ///////////////////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) {
-    (void)argc, (void)argv;
-
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0) {
         fprintf(stderr, "FATAL: SDL initialization failed - %s\n", SDL_GetError());
         return 1;
@@ -149,7 +147,7 @@ int main(int argc, char* argv[]) {
     #endif
 
     static GLMenuApp app;
-    if (!app.init()) {
+    if (!app.init((argc > 1) ? argv[1] : nullptr)) {
         return 1;
     }
 

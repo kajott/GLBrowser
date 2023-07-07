@@ -15,6 +15,7 @@ struct DirItem {
     bool isdir;
     std::string display;
     bool operator< (const DirItem& other) const;
+    bool operator== (const std::string& other) const;
     inline const std::string& displayText() const { return display.empty() ? name : display; }
     inline DirItem(const std::string& name_, bool isdir_) : name(name_), isdir(isdir_), display(isdir_ ? (name_ + " \xE2\x96\xBA") : "") {}
     inline DirItem(const std::string& name_, bool isdir_, const std::string& display_) : name(name_), isdir(isdir_), display(display_) {}
@@ -37,7 +38,7 @@ class DirPanel {
     float m_animCursorY;
 
 public:
-    explicit DirPanel(DirView& parent, const std::string& path, int x0, bool active=true);
+    explicit DirPanel(DirView& parent, const std::string& path, int x0, bool active=true, const std::string& preselect="");
 
     int startX()                 const { return m_x0; }
     int endX()                   const { return m_x0 + m_width; }
