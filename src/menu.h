@@ -29,11 +29,11 @@ class ModalMenu {
     struct ControlItem {
         bool keyboard;
         std::string control;
-        std::string caption;
+        std::string label;
         int enableMask;
         int enableRef;
-        inline ControlItem(bool keyboard_, const std::string& control_, const std::string& caption_, int enableMask_=0, int enableRef_=0)
-            : keyboard(keyboard_), control(control_), caption(caption_), enableMask(enableMask_), enableRef(enableRef_) {}
+        inline ControlItem(bool keyboard_, const std::string& control_, const std::string& label_, int enableMask_=0, int enableRef_=0)
+            : keyboard(keyboard_), control(control_), label(label_), enableMask(enableMask_), enableRef(enableRef_) {}
     };
     std::vector<ControlItem> m_controls;
 
@@ -71,7 +71,7 @@ public:
     void clear();
     void addItem(int id, const std::string& text);
     void addSeparator();
-    void addControl(bool keyboard, const std::string& control, const std::string& caption, int enableMask=0, int enableRef=0);
+    void addControl(bool keyboard, const std::string& control, const std::string& label, int enableMask=0, int enableRef=0);
 
     void avoid(int y, int x0, int x1);
     void avoidCurrentItem(const DirView& dirView);
@@ -79,7 +79,7 @@ public:
 
     int animate();
     void draw();
-    void controls(std::function<void(bool keyboard, const std::string& control, const std::string& caption)> callback);
+    void controls(std::function<void(bool keyboard, const std::string& control, const std::string& label)> callback);
 
     enum class EventType {
         Confirm,  //!< menu item has been selected and confirmed (and menu has been deactivated)

@@ -57,9 +57,9 @@ void GLMenuApp::draw(double dt) {
     constexpr uint32_t controlBarColor = 0xFFAAAAAA;
     int x = m_geometry.outerMarginX;
     if (m_menu.active()) {
-        m_menu.controls([&] (bool keyboard, const std::string& control, const std::string& caption) {
+        m_menu.controls([&] (bool keyboard, const std::string& control, const std::string& label) {
             if (keyboard != m_haveController) {
-                x = m_renderer.control(x, y, m_geometry.textSize, 0, keyboard, control.c_str(), caption.c_str(), controlBarColor, barBackOpaque);
+                x = m_renderer.control(x, y, m_geometry.textSize, 0, keyboard, control.c_str(), label.c_str(), controlBarColor, barBackOpaque);
             }
         });
     } else if (m_haveController) {

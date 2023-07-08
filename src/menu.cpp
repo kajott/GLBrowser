@@ -35,8 +35,8 @@ void ModalMenu::setBoxTitle(const std::string& title) {
     m_boxTitle = title;
 }
 
-void ModalMenu::addControl(bool keyboard, const std::string& control, const std::string& caption, int enableMask, int enableRef) {
-    m_controls.push_back(ControlItem(keyboard, control, caption, enableMask, enableRef));
+void ModalMenu::addControl(bool keyboard, const std::string& control, const std::string& label, int enableMask, int enableRef) {
+    m_controls.push_back(ControlItem(keyboard, control, label, enableMask, enableRef));
 }
 
 void ModalMenu::finishLayout() {
@@ -147,13 +147,13 @@ void ModalMenu::draw() {
     }
 }
 
-void ModalMenu::controls(std::function<void(bool keyboard, const std::string& control, const std::string& caption)> callback) {
+void ModalMenu::controls(std::function<void(bool keyboard, const std::string& control, const std::string& label)> callback) {
     if (!m_active) { return; }
     callback(false, "A", "Select");  callback(true, "Enter", "Select");
     callback(false, "B", "Cancel");  callback(true, "Esc",   "Cancel");
     for (const auto& control : m_controls) {
         if ((m_resultID & control.enableMask) == control.enableRef) {
-            callback(control.keyboard, control.control, control.caption);
+            callback(control.keyboard, control.control, control.label);
         }
     }
 }

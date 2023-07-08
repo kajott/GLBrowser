@@ -412,7 +412,7 @@ float TextBoxRenderer::outlineText(float x, float y, float size, const char* tex
 
 ///////////////////////////////////////////////////////////////////////////////
 
-int TextBoxRenderer::control(int x, int y, int size, uint8_t vAlign, bool keyboard, const char* control, const char* caption, uint32_t textColor, uint32_t backgroundColor) {
+int TextBoxRenderer::control(int x, int y, int size, uint8_t vAlign, bool keyboard, const char* control, const char* label, uint32_t textColor, uint32_t backgroundColor) {
     switch (vAlign & Align::VMask) {
         case Align::Middle:   y -= size >> 1;  break;
         case Align::Bottom:   y -= size;  break;
@@ -440,8 +440,8 @@ int TextBoxRenderer::control(int x, int y, int size, uint8_t vAlign, bool keyboa
         x += w;
     }
     x += size / 3;
-    if (caption) {
-        x = int(std::ceil(text(float(x), float(y), float(size), caption, 0, textColor))) + size;
+    if (label) {
+        x = int(std::ceil(text(float(x), float(y), float(size), label, 0, textColor))) + size;
     }
     return x;
 }

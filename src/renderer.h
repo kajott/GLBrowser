@@ -100,7 +100,7 @@ public:
         { return outlineText(x, y, size, text, align, colorUpper, colorLower, 0, 0.0f, shadowOffset, shadowBlur, shadowAlpha, shadowGrow); }
 
     int control(int x, int y, int size, uint8_t vAlign, bool keyboard,
-                const char* control, const char* caption=nullptr,
+                const char* control, const char* label=nullptr,
                 uint32_t textColor=0xFFFFFFFF, uint32_t backgroundColor=0xFF000000);
 
     static inline uint32_t makeAlpha(float alpha)
