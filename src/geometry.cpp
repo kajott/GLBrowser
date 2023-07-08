@@ -14,6 +14,7 @@ void Geometry::update(int screenWidth_, int screenHeight_) {
     itemMarginY = itemHeight / 8;
     itemMarginX = itemMarginY;
     panelMarginX = itemMarginX;
+    panelMarginY = itemMarginX;
 
     textSize = itemHeight - 2 * itemMarginY;
 
@@ -21,6 +22,10 @@ void Geometry::update(int screenWidth_, int screenHeight_) {
     itemOutlineOffset = itemOutlineWidth / 2;
     itemBorderRadius = itemMarginY;
     itemShadowOffset = itemOutlineWidth * 2;
+    itemSeparatorDistance = itemHeight / 5;
+
+    contextMenuDistance = itemHeight / 5;
+    menuBoxShadowSize = itemOutlineWidth * 4;
 
     outerMarginX = itemHeight / 4;
     outerMarginY = itemHeight / 6;

@@ -113,9 +113,8 @@ void DirPanel::moveCursor(int target, bool relative) {
     if (relative) { target += m_cursor; }
     target = std::min(std::max(0, target), int(m_items.size()) - 1);
     m_cursor = target;
-    int cursorScreenY = m_y0 + m_cursor * m_geometry.itemHeight;
-    m_y0 += std::max(0, m_geometry.dirViewY0 - cursorScreenY)
-          - std::max(0, cursorScreenY + m_geometry.itemHeight - m_geometry.dirViewY1);
+    m_y0 += std::max(0, m_geometry.dirViewY0 - cursorY())
+          - std::max(0, cursorY() + m_geometry.itemHeight - m_geometry.dirViewY1);
 }
 
 int DirPanel::animate() {
@@ -205,12 +204,16 @@ void DirView::moveCursor(int target, bool relative) {
     m_panels.back().moveCursor(target, relative);
 }
 
+std::string DirView::currentItemFullPath() const {
+    return PathJoin(currentDir(), currentItem().name);
+}
+
 void DirView::push() {
     const DirItem& current = currentItem();
     if (!current.isdir) { return; }
     if (current.name.empty()) { pop(); return; }
     m_panels.back().deactivate();
-    m_panels.push_back(DirPanel(*this, PathJoin(path(), current.name), m_panels.back().endX()));
+    m_panels.push_back(DirPanel(*this, PathJoin(currentDir(), current.name), m_panels.back().endX()));
     updateScroll();
 }
 

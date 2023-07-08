@@ -20,11 +20,16 @@ struct Geometry {
     int itemMarginX;
     int itemMarginY;
     int panelMarginX;
+    int panelMarginY;
 
     int itemOutlineWidth;
     int itemOutlineOffset;
     int itemBorderRadius;
     int itemShadowOffset;
+    int itemSeparatorDistance;
+
+    int contextMenuDistance;
+    int menuBoxShadowSize;
 
     void update(int screenWidth, int screenHeight);
 

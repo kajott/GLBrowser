@@ -1,17 +1,9 @@
 #pragma once
 
+#include "event.h"
 #include "renderer.h"
 #include "dirview.h"
-
-
-enum class AppEvent {
-    Left, Right, Up, Down,
-    PageUp, PageDown, Home, End,
-    A, B, X, Y,
-    RS, LS, RT, LT,
-    Select, Start, Logo
-};
-
+#include "menu.h"
 
 class GLMenuApp {
     bool m_active = true;
@@ -20,9 +12,12 @@ class GLMenuApp {
     TextBoxRenderer m_renderer;
     Geometry m_geometry;
     DirView m_dirView;
+    ModalMenu m_menu;
 
 public:
-    inline GLMenuApp() : m_dirView(m_renderer, m_geometry) {}
+    inline GLMenuApp()
+        : m_dirView(m_renderer, m_geometry)
+        , m_menu   (m_renderer, m_geometry) {}
 
     inline void haveController() { m_haveController = true; }
 

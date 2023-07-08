@@ -40,12 +40,13 @@ class DirPanel {
 public:
     explicit DirPanel(DirView& parent, const std::string& path, int x0, bool active=true, const std::string& preselect="");
 
-    int startX()                 const { return m_x0; }
-    int endX()                   const { return m_x0 + m_width; }
-    const std::string& path()    const { return m_path; }
-    const DirItem& currentItem() const { return m_items[m_cursor]; }
-    void deactivate()                  { m_active = false; }
-    void activate()                    { m_active = true; }
+    inline int cursorY()                const { return m_y0 + m_cursor * m_geometry.itemHeight; }
+    inline int startX()                 const { return m_x0; }
+    inline int endX()                   const { return m_x0 + m_width; }
+    inline const std::string& path()    const { return m_path; }
+    inline const DirItem& currentItem() const { return m_items[m_cursor]; }
+    inline void deactivate()                  { m_active = false; }
+    inline void activate()                    { m_active = true; }
 
     int animate();
     void draw(float xOffset=0.0f);
@@ -71,8 +72,15 @@ public:
     inline DirView(TextBoxRenderer& renderer, const Geometry& geometry)
         : m_renderer(renderer), m_geometry(geometry) {}
 
-    const std::string& path()    const { return m_panels.back().path(); }
-    const DirItem& currentItem() const { return m_panels.back().currentItem(); }
+    inline const bool atRoot()             const { return (m_panels.size() < 2u); }
+    inline const int xScroll()             const { return m_xScroll; }
+    inline const DirPanel& currentPanel()  const { return m_panels.back(); }
+    inline const DirItem& currentItem()    const { return currentPanel().currentItem(); }
+    inline const std::string& currentDir() const { return currentPanel().path(); }
+    std::string currentItemFullPath() const;
+
+    inline void deactivate() { m_panels.back().deactivate(); }
+    inline void activate()   { m_panels.back().activate(); }
 
     void navigate(const std::string& path);
 
