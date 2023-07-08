@@ -57,10 +57,10 @@ public:
     inline ModalMenu(TextBoxRenderer& renderer, const Geometry& geometry)
         : m_renderer(renderer), m_geometry(geometry) {}
 
-    inline const std::string& mainTitle() const  { return m_mainTitle; }
-    inline void setMainTitle(std::string& title) { m_mainTitle = title; }
+    inline const std::string& mainTitle() const        { return m_mainTitle; }
+    inline void setMainTitle(const std::string& title) { m_mainTitle = title; }
 
-    inline const std::string& boxTitle() const   { return m_boxTitle; }
+    inline const std::string& boxTitle() const         { return m_boxTitle; }
     void setBoxTitle(const std::string& title);
 
     inline bool active()    const { return m_active; }

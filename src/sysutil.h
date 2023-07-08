@@ -32,15 +32,18 @@ inline std::string PathDirName(const std::string& path)  { return PathDirName(pa
 std::string GetCurrentDir();
 
 bool PathExists(const char* path);
-inline bool PathExists(const std::string& path)  { return PathExists(path.c_str()); }
-
-bool IsDirectory(const char* path);
-inline bool IsDirectory(const std::string& path) { return IsDirectory(path.c_str()); }
+inline bool PathExists(const std::string& path)   { return PathExists(path.c_str()); }
 
 bool IsFile(const char* path);
-inline bool IsFile(const std::string& path)      { return IsFile(path.c_str()); }
+inline bool IsFile(const std::string& path)       { return IsFile(path.c_str()); }
+
+bool IsDirectory(const char* path);
+inline bool IsDirectory(const std::string& path)  { return IsDirectory(path.c_str()); }
+
+bool IsExecutable(const char* path);
+inline bool IsExecutable(const std::string& path) { return IsExecutable(path.c_str()); }
 
 bool IsRoot(const char* path);
-inline bool IsRoot(const std::string& path)      { return IsRoot(path.c_str()); }
+inline bool IsRoot(const std::string& path)       { return IsRoot(path.c_str()); }
 
-bool ScanDirectory(const char* path, std::function<void(const char* name, bool isdir)> callback);
+bool ScanDirectory(const char* path, std::function<void(const char* name, bool isdir, bool isexec)> callback);

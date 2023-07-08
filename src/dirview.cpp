@@ -55,8 +55,8 @@ DirPanel::DirPanel(DirView& parent, const std::string& path, int x0, bool active
     if (isSubdir) {
         m_items.push_back(DirItem("", true, "\xE2\x97\x84 back"));
     }
-    ScanDirectory(path.c_str(), [&] (const char* name, bool isdir) {
-        m_items.push_back(DirItem(name, isdir));
+    ScanDirectory(path.c_str(), [&] (const char* name, bool isdir, bool isexec) {
+        m_items.push_back(DirItem(name, isdir, isexec));
     });
     std::sort(m_items.begin() + (isSubdir ? 1 : 0), m_items.end());
 

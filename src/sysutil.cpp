@@ -9,6 +9,7 @@
 #endif
 
 #include <cstdio>
+#include <cstring>
 
 #include <string>
 #include <functional>
@@ -78,6 +79,15 @@ bool IsRoot(const char* path) {
 
 bool ispathsep(char c) { return (c == '\\') || (c == '/'); }
 
+static bool IsExeFile(const char* path) {
+    if (!path) { return false; }
+    int len = int(strlen(path));
+    return (len > 4) &&  (path[len-4] == '.')
+                     && ((path[len-3] == 'e') || (path[len-3] == 'E'))
+                     && ((path[len-2] == 'x') || (path[len-2] == 'X'))
+                     && ((path[len-1] == 'e') || (path[len-1] == 'E'));
+}
+
 std::string GetCurrentDir() {
     char buf[currentDirMaxLen];
     return GetCurrentDirectory(currentDirMaxLen, buf) ? buf : "";
@@ -97,14 +107,19 @@ bool IsDirectory(const char* path) {
     return (attr != INVALID_FILE_ATTRIBUTES) && !!(attr & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-bool ScanDirectory(const char* path, std::function<void(const char*, bool)> callback) {
+bool IsExecutable(const char* path) {
+    DWORD attr = GetFileAttributesA(path);
+    return (attr != INVALID_FILE_ATTRIBUTES) && !!(attr & FILE_ATTRIBUTE_DIRECTORY) && IsExeFile(path);
+}
+
+bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)> callback) {
     if (!path || !path[0]) {
         // special case: empty path -> generate drive list
         DWORD mask = GetLogicalDrives();
         if (!mask) { return false; }
         char drive[] = "A:";
         for (int i = 26;  i;  --i) {
-            if (mask & 1u) { callback(drive, true); }
+            if (mask & 1u) { callback(drive, true, false); }
             mask >>= 1;
             drive[0]++;
         }
@@ -116,7 +131,9 @@ bool ScanDirectory(const char* path, std::function<void(const char*, bool)> call
     if (dir == INVALID_HANDLE_VALUE) { return false; }
     do {
         if (item.cFileName[0] && (item.cFileName[0] != '.') && !(item.dwFileAttributes & (FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM))) {
-            callback(item.cFileName, !!(item.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+            int fnlen = int(strlen(item.cFileName));
+            bool isdir = !!(item.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+            callback(item.cFileName, isdir, !isdir && IsExeFile(item.cFileName));
         }
     } while (FindNextFileA(dir, &item));
     FindClose(dir);
@@ -139,7 +156,7 @@ bool PathExists(const char* path) {
 
 bool IsFile(const char* path) {
     struct stat st;
-    return (stat(path, &st) == 0) && !!S_ISREG(st.st_mode);
+    return (stat(path, &st) == 0) && !S_ISDIR(st.st_mode);
 }
 
 bool IsDirectory(const char* path) {
@@ -147,7 +164,12 @@ bool IsDirectory(const char* path) {
     return (stat(path, &st) == 0) && !!S_ISDIR(st.st_mode);
 }
 
-bool ScanDirectory(const char* path, std::function<void(const char*, bool)> callback) {
+bool IsExecutable(const char* path) {
+    struct stat st;
+    return (stat(path, &st) == 0) && !S_ISDIR(st.st_mode) && ((st.st_mode & 0111) != 0);
+}
+
+bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)> callback) {
     DIR *dir = opendir(path);
     if (!dir) { return false; }
     struct dirent* item;
@@ -157,7 +179,8 @@ bool ScanDirectory(const char* path, std::function<void(const char*, bool)> call
             { continue; }  // ignore hidden items
         std::string itemPath = PathJoin(path, item->d_name);
         if (stat(itemPath.c_str(), &st) == 0) {
-            callback(item->d_name, !!S_ISDIR(st.st_mode));
+            bool isdir = !!S_ISDIR(st.st_mode);
+            callback(item->d_name, isdir, !isdir && ((st.st_mode & 0111) != 0));
         }
     }
     closedir(dir);
