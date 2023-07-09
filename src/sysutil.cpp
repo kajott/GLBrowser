@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
@@ -12,6 +14,7 @@
 #include <cstring>
 
 #include <string>
+#include <vector>
 #include <functional>
 
 #include "sysutil.h"
@@ -19,6 +22,25 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 constexpr int currentDirMaxLen = 1024;
+
+uint32_t extractExtCode(const char* path) {
+    if (!path) { return 0u; }
+    const char* ext = nullptr;
+    while (*path) {
+        if (ispathsep(*path))  { ext = nullptr; }
+        else if (*path == '.') { ext = &path[1]; }
+        ++path;
+    }
+    if (!ext) { return 0u; }
+    uint32_t code = 0u;
+    do {
+        char c = *ext++;
+        if (!c) { break; }
+        if ((c >= 'A') && (c <= 'Z')) { c += 'a' - 'A'; }
+        code = (code << 8) | uint8_t(*ext);
+    } while (code < (1u << 24));
+    return code;
+}
 
 std::string PathJoin(const char* a, const char* b) {
     std::string res;
@@ -75,6 +97,67 @@ bool IsRoot(const char* path) {
     return !path || !path[0] || (ispathsep(path[0]) && !path[1]);
 }
 
+static std::vector<std::string> searchDirs;
+
+void FindExecutableInit(const char* additionalDir) {
+    searchDirs.emplace_back("");
+    if (additionalDir && additionalDir[0]) {
+        searchDirs.emplace_back(additionalDir);
+    }
+    const char *pathVar = getenv("PATH");
+    if (pathVar) {
+        int start = 0;
+        while (pathVar[start]) {
+            int end = start;
+            while (pathVar[end] && (pathVar[end] != searchPathSep)) { ++end; }
+            if (end > start) {
+                searchDirs.emplace_back(&pathVar[start], end - start);
+            }
+            start = pathVar[end] ? (end + 1) : end;
+        }
+    }
+    //for (const auto& dir : searchDirs) { printf("SD: %s\n", dir.c_str()); }
+}
+
+std::string FindExecutable(const char* name) {
+    if (searchDirs.empty()) {
+        FindExecutableInit();
+    }
+    for (const auto& searchDir : searchDirs) {
+        std::string fullPath = PathJoin(searchDir, name);
+        if (IsExecutable(fullPath)) { return fullPath; }
+    }
+
+#ifdef _WIN32
+    // look for in the registry, too
+    HKEY hKey;
+    std::string keyName("Applications\\");
+    keyName.append(name);
+    keyName.append("\\shell\\open\\command");
+    if (RegOpenKeyExA(HKEY_CLASSES_ROOT, keyName.c_str(), 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        char cmd[currentDirMaxLen];
+        DWORD typeCode, size = DWORD(sizeof(cmd));
+        cmd[0] = '\0';
+        if ((RegQueryValueExA(hKey, nullptr, nullptr, &typeCode, LPBYTE(cmd), &size) == ERROR_SUCCESS)
+        &&  (typeCode == REG_SZ)) {
+            int start = 0, end;
+            while (cmd[start] && (cmd[start] == ' ')) { ++start; }
+            if (cmd[start] == '"') {
+                end = ++start;
+                while (cmd[end] && (cmd[end] != '"')) { ++end; }
+            } else {
+                end = start;
+                while (cmd[end] && (cmd[end] != ' ')) { ++end; }
+            }
+            std::string fullPath(&cmd[start], end-start);
+            if (IsExecutable(fullPath)) { return fullPath; }
+        }
+        RegCloseKey(hKey);
+    }
+#endif
+    return "";  // not found
+}
+
 #ifdef _WIN32 /////////////////////////////////////////////////////////////////
 
 bool ispathsep(char c) { return (c == '\\') || (c == '/'); }
@@ -109,7 +192,7 @@ bool IsDirectory(const char* path) {
 
 bool IsExecutable(const char* path) {
     DWORD attr = GetFileAttributesA(path);
-    return (attr != INVALID_FILE_ATTRIBUTES) && !!(attr & FILE_ATTRIBUTE_DIRECTORY) && IsExeFile(path);
+    return (attr != INVALID_FILE_ATTRIBUTES) && !(attr & FILE_ATTRIBUTE_DIRECTORY) && IsExeFile(path);
 }
 
 bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)> callback) {

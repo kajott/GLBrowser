@@ -2,6 +2,11 @@
 
 #include "glad.h"
 
+#include "event.h"
+#include "renderer.h"
+#include "dirview.h"
+#include "menu.h"
+#include "file_assoc.h"
 #include "sysutil.h"
 
 #include "app.h"
@@ -13,6 +18,7 @@ bool GLMenuApp::init(const char *initial) {
     if (!m_renderer.init()) { return false; }
     m_geometry.update(m_renderer.viewportWidth(), m_renderer.viewportHeight());
     m_dirView.navigate(initial ? initial : GetCurrentDir());
+    FileAssocInit(m_argv0);
     return true;
 }
 

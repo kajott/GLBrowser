@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
         printf("OpenGL renderer: %s\n", glGetString(GL_RENDERER));
     #endif
 
-    static GLMenuApp app;
+    static GLMenuApp app(argv[0]);
     if (!app.init((argc > 1) ? argv[1] : nullptr)) {
         return 1;
     }

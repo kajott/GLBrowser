@@ -6,6 +6,7 @@
 #include "menu.h"
 
 class GLMenuApp {
+    const char* m_argv0;
     bool m_active = true;
     int m_framesRequested = 1;
     bool m_haveController = false;
@@ -15,8 +16,9 @@ class GLMenuApp {
     ModalMenu m_menu;
 
 public:
-    inline GLMenuApp()
-        : m_dirView(m_renderer, m_geometry)
+    explicit inline GLMenuApp(const char *argv0=nullptr)
+        : m_argv0(argv0)
+        , m_dirView(m_renderer, m_geometry)
         , m_menu   (m_renderer, m_geometry) {}
 
     inline void haveController() { m_haveController = true; }

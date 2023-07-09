@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <string>
 #include <functional>
 
@@ -15,6 +17,9 @@
 
 inline constexpr bool my_isalpha(char c)
     { return ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')); }
+
+uint32_t extractExtCode(const char* path);
+inline uint32_t extractExtCode(const std::string& path) { return extractExtCode(path.c_str()); }
 
 bool ispathsep(char c);
 
@@ -47,3 +52,7 @@ bool IsRoot(const char* path);
 inline bool IsRoot(const std::string& path)       { return IsRoot(path.c_str()); }
 
 bool ScanDirectory(const char* path, std::function<void(const char* name, bool isdir, bool isexec)> callback);
+
+void FindExecutableInit(const char* additionalDir=nullptr);
+inline void FindExecutableInit(const std::string& additionalDir) { FindExecutableInit(additionalDir.c_str()); }
+std::string FindExecutable(const char* name);
