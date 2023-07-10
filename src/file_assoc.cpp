@@ -19,8 +19,8 @@
 #endif
 
 static const FileAssociationRegistryItem fileAssocRegistry[] = {
-    { "GLISS",     EXE("gliss"),     "jpg jpeg jpe" },
-    { "XnView",    EXE("xnview"),    "jpg jpeg jpe jfif png bmp tif tiff tga pcx gif" },
+    { "GLISS",     EXE("gliss"),     "/ jpg jpeg jpe" },
+    { "XnView",    EXE("xnview"),    "/ jpg jpeg jpe jfif png bmp tif tiff tga pcx gif" },
 
     { "MPV",       EXE("mpv"),       "mp4 mov mkv webm mts m2ts m2t m2p mpg ogv wmv asf flv avi" },
     { "MPC-HC",    EXE("mpc-hc64"),  "mp4 mov mkv webm mts m2ts m2t m2p mpg ogv wmv asf flv avi" },
@@ -28,14 +28,14 @@ static const FileAssociationRegistryItem fileAssocRegistry[] = {
 
     { "MuPDF",     EXE("mupdf"),     "pdf" },
 
-    { "Vivaldi",   EXE("vivaldi"),   "htm html" },
-    { "Chrome",    EXE("chrome"),    "htm html" },
-    { "Chromium",  EXE("chromium"),  "htm html" },
-    { "Firefox",   EXE("firefox"),   "htm html" },
+    { "Vivaldi",   EXE("vivaldi"),   "/ htm html" },
+    { "Chrome",    EXE("chrome"),    "/ htm html" },
+    { "Chromium",  EXE("chromium"),  "/ htm html" },
+    { "Firefox",   EXE("firefox"),   "/ htm html" },
 
     { "Notepad++", EXE("notepad++"), "txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
     { "GEdit",     EXE("gedit"),     "txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
-    { "VS Code",   EXE("code"),      "txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
+    { "VS Code",   EXE("code"),    "/ txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
 
     // stuff that executes scripts is put last, so it never becomes the default
     { "Python",    EXE("py"),        "py" },
