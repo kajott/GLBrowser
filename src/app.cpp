@@ -12,11 +12,11 @@
 #include "app.h"
 
 namespace MenuItemID {
-    constexpr int Dismiss         = 0;
-    constexpr int CustomBase      = 0x10000;
-    constexpr int OpenWithDefault = CustomBase + 0;
-    constexpr int RunExecutable   = CustomBase + 1;
-    inline bool IsFileAssoc(int id) { return (id > 0) && (id < CustomBase); }
+    constexpr int Dismiss         =  0;
+    constexpr int QuitApplication = -1;
+    constexpr int OpenWithDefault = -2;
+    constexpr int RunExecutable   = -3;
+    inline bool IsFileAssoc(int id) { return (id > 0); }
 };
 
 bool GLMenuApp::init(const char *initial) {
@@ -80,7 +80,7 @@ void GLMenuApp::draw(double dt) {
         x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "A", "Select", controlBarColor, barBackOpaque);
         if (!m_dirView.atRoot()) { x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "B", "Parent Directory", controlBarColor, barBackOpaque); }
         x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "X", "Open With", controlBarColor, barBackOpaque);
-        //x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "START", "Menu", controlBarColor, barBackOpaque);
+        x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "START", "Menu", controlBarColor, barBackOpaque);
     } else {
         x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Enter", "Select", controlBarColor, barBackOpaque);
         if (!m_dirView.atRoot()) { x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Backspace", "Parent Directory", controlBarColor, barBackOpaque); }
@@ -89,6 +89,16 @@ void GLMenuApp::draw(double dt) {
     }
 
     m_renderer.flush();
+}
+
+void GLMenuApp::showMainMenu() {
+    m_menu.clear();
+    m_menu.setBoxTitle("Main Menu");
+    m_menu.addItem(MenuItemID::QuitApplication, "Quit");
+    m_menu.addSeparator();
+    m_menu.addItem(0, "Cancel");
+    m_menu.activate();
+    m_dirView.deactivate();
 }
 
 void GLMenuApp::showOpenWithMenu() {
@@ -116,6 +126,12 @@ void GLMenuApp::handleEvent(AppEvent ev) {
     // handle modal menu's events first
     ModalMenu::EventType me = m_menu.handleEvent(ev);
     if (me != ModalMenu::EventType::Inactive) {
+        if (me == ModalMenu::EventType::Confirm) {
+            switch (m_menu.result()) {
+                case MenuItemID::QuitApplication: m_active = false; break;
+                default: break;
+            }
+        }
         if (!m_menu.active()) {
             m_dirView.activate();
         }
@@ -138,6 +154,7 @@ void GLMenuApp::handleEvent(AppEvent ev) {
                 m_dirView.push();
             }  // else: open with default application (TODO)
             break;
+        case AppEvent::Start:   showMainMenu(); break;
         case AppEvent::X:       showOpenWithMenu(); break;
         default: break;
     }

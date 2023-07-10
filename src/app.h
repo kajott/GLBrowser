@@ -15,6 +15,7 @@ class GLMenuApp {
     DirView m_dirView;
     ModalMenu m_menu;
 
+    void showMainMenu();
     void showOpenWithMenu();
 
 public:
