@@ -7,3 +7,9 @@ enum class AppEvent {
     RS, LS, RT, LT,
     Select, Start, Logo
 };
+
+enum class AppAction {
+    Quit,
+    Minimize,
+    Restore
+};

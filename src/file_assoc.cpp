@@ -54,7 +54,7 @@ void FileAssocInit(const char* argv0) {
     assocList.clear();
     extMap.clear();
     if (argv0) {
-        FindExecutableInit(PathDirName(argv0));
+        FindProgramInit(PathDirName(argv0));
     }
 
     FileAssociation assoc;
@@ -63,13 +63,17 @@ void FileAssocInit(const char* argv0) {
     assocList.push_back(assoc);
 
     for (const auto* item = fileAssocRegistry;  item->displayName && item->executableName && item->extensions;  ++item) {
-        assoc.executablePath = FindExecutable(item->executableName);
+        assoc.executablePath = FindProgram(item->executableName);
         if (assoc.executablePath.empty()) { continue; }
         assoc.displayName    = item->displayName;
         assoc.executableName = item->executableName;
         assoc.extensions     = item->extensions;
         assoc.index          = int(assocList.size());
         assocList.push_back(assoc);
+
+        #ifndef NDEBUG
+            printf("found program: %-10s -> %s\n", item->displayName, assoc.executablePath.c_str());
+        #endif
 
         // parse extension list
         const char* pos = item->extensions;

@@ -3,11 +3,14 @@
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
+    #include <shellapi.h>
 #else
     #include <sys/types.h>
     #include <sys/stat.h>
+    #include <sys/wait.h>
     #include <unistd.h>
     #include <dirent.h>
+    #include <errno.h>
 #endif
 
 #include <cstdio>
@@ -99,7 +102,7 @@ bool IsRoot(const char* path) {
 
 static std::vector<std::string> searchDirs;
 
-void FindExecutableInit(const char* additionalDir) {
+void FindProgramInit(const char* additionalDir) {
     searchDirs.emplace_back("");
     if (additionalDir && additionalDir[0]) {
         searchDirs.emplace_back(additionalDir);
@@ -119,9 +122,9 @@ void FindExecutableInit(const char* additionalDir) {
     //for (const auto& dir : searchDirs) { printf("SD: %s\n", dir.c_str()); }
 }
 
-std::string FindExecutable(const char* name) {
+std::string FindProgram(const char* name) {
     if (searchDirs.empty()) {
-        FindExecutableInit();
+        FindProgramInit();
     }
     for (const auto& searchDir : searchDirs) {
         std::string fullPath = PathJoin(searchDir, name);
@@ -223,6 +226,56 @@ bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)
     return true;
 }
 
+bool RunProgram(const char* program, const char* argument) {
+    if (program && program[0]) {  // run specific program
+        // glue together a command line
+        std::string cmdline("\"");
+        cmdline.append(program);
+        if (argument && argument[0]) {
+            cmdline.append("\" \"");
+            cmdline.append(argument);
+        }
+        cmdline.append("\"");
+
+        // use CreateProcess to start the process
+        PROCESS_INFORMATION pi;
+        STARTUPINFOA si;
+        ::memset((void*)&si, 0, sizeof(si));
+        si.cb = sizeof(si);
+        if (!CreateProcessA(
+            program,           // lpApplicationName
+            const_cast<LPSTR>(cmdline.c_str()),  // lpCommandLine
+            nullptr, nullptr,  // lpProcessAttributes, lpThreadAttributes
+            FALSE, 0,          // bInheritHandles, dwCreationFlags
+            nullptr, nullptr,  // lpEnvironment, lpCurrentDirectory
+            &si, &pi))         // lpStartupInfo, lpProcessInformation
+            { return false; }
+
+        // wait for the process to terminate
+        CloseHandle(pi.hThread);
+        WaitForSingleObject(pi.hProcess, INFINITE);
+        CloseHandle(pi.hProcess);
+        return true;
+    } else if (argument && argument[0]) {  // use system default application
+        // prepare ShellExecuteEx invocation
+        SHELLEXECUTEINFOA ei;
+        ::memset((void*)&ei, 0, sizeof(ei));
+        ei.cbSize = sizeof(ei);
+        ei.lpFile = argument;
+        ei.nShow = SW_SHOWNORMAL;
+        ei.fMask = SEE_MASK_NOCLOSEPROCESS;
+
+        // run the process and wait for completion
+        if (!ShellExecuteExA(&ei)) { return false; }
+        if (ei.hProcess) {
+            WaitForSingleObject(ei.hProcess, INFINITE);
+            CloseHandle(ei.hProcess);
+        }
+        return true;
+    }
+    return false;
+}
+
 #else // POSIX ////////////////////////////////////////////////////////////////
 
 bool ispathsep(char c) { return (c == '/'); }
@@ -268,6 +321,37 @@ bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)
     }
     closedir(dir);
     return true;
+}
+
+bool RunProgram(const char* program, const char* argument) {
+    if (argument && !argument[0]) { argument = nullptr; }
+
+    // pick a universal default application
+    if (!program || !program[0]) {
+        if (!argument) { return false; }
+        #ifdef __APPLE__
+            program = "open";
+        #else
+            program = "xdg-open";
+        #endif
+    }
+
+    // do the fork-exec-wait dance
+    pid_t childPID = fork();
+    if (childPID < 0) { return false; }
+    if (childPID) {
+        int status = 0;
+        waitpid(childPID, &status, 0);
+        return WIFEXITED(status) && (WEXITSTATUS(status) != 0xBE);
+    } else {
+        char * const argv[3] = { const_cast<char*>(program), const_cast<char*>(argument), nullptr };
+        execv(program, argv);
+        fprintf(stderr, "\n***** child process execv() failed *****\ncommand line:  %s", program);
+        if (argument) { fprintf(stderr, " \"%s\"", argument); }
+        perror("\nerror message");
+        _exit(0xBE);
+    }
+    return false;
 }
 
 #endif // POSIX ///////////////////////////////////////////////////////////////

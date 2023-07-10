@@ -122,14 +122,43 @@ void GLMenuApp::showOpenWithMenu() {
     m_dirView.deactivate();
 }
 
+void GLMenuApp::itemSelected() {
+    if (m_dirView.currentItem().isDir) {
+        m_dirView.push();
+    } else if (m_dirView.currentItem().isExec) {
+        runProgramWrapper(m_dirView.currentItemFullPath().c_str());
+    } else {
+        int assocIndex = 0;
+        FileAssocLookup(m_dirView.currentItem().extCode, [&] (const FileAssociation& assoc) -> bool {
+            assocIndex = assoc.index;
+            return false;
+        });
+        runProgramWrapper(GetFileAssoc(assocIndex).executablePath.c_str(),
+                          m_dirView.currentItemFullPath().c_str());
+    }
+}
+
+void GLMenuApp::runProgramWrapper(const char* program, const char* argument) {
+    m_actionCallback(AppAction::Minimize);
+    RunProgram(program, argument);
+    m_actionCallback(AppAction::Restore);
+}
+
 void GLMenuApp::handleEvent(AppEvent ev) {
-    // handle modal menu's events first
+    // handle modal menu events first
     ModalMenu::EventType me = m_menu.handleEvent(ev);
     if (me != ModalMenu::EventType::Inactive) {
         if (me == ModalMenu::EventType::Confirm) {
             switch (m_menu.result()) {
-                case MenuItemID::QuitApplication: m_active = false; break;
-                default: break;
+                case MenuItemID::QuitApplication: m_actionCallback(AppAction::Quit); break;
+                case MenuItemID::RunExecutable:   runProgramWrapper(m_dirView.currentItemFullPath().c_str()); break;
+                case MenuItemID::OpenWithDefault: runProgramWrapper(nullptr, m_dirView.currentItemFullPath().c_str()); break;
+                default:
+                    if (MenuItemID::IsFileAssoc(m_menu.result())) {
+                        runProgramWrapper(GetFileAssoc(m_menu.result()).executablePath.c_str(),
+                                          m_dirView.currentItemFullPath().c_str());
+                    }
+                    break;
             }
         }
         if (!m_menu.active()) {
@@ -149,13 +178,9 @@ void GLMenuApp::handleEvent(AppEvent ev) {
         case AppEvent::B:        m_dirView.pop(); break;
         case AppEvent::LS:       m_dirView.pop(); break;
         case AppEvent::RS:       m_dirView.push(); break;
-        case AppEvent::A:
-            if (m_dirView.currentItem().isDir) {
-                m_dirView.push();
-            }  // else: open with default application (TODO)
-            break;
-        case AppEvent::Start:   showMainMenu(); break;
-        case AppEvent::X:       showOpenWithMenu(); break;
+        case AppEvent::A:        itemSelected(); break;
+        case AppEvent::X:        showOpenWithMenu(); break;
+        case AppEvent::Start:    showMainMenu(); break;
         default: break;
     }
 }

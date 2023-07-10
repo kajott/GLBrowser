@@ -1,13 +1,15 @@
 #pragma once
 
+#include <functional>
+
 #include "event.h"
 #include "renderer.h"
 #include "dirview.h"
 #include "menu.h"
 
 class GLMenuApp {
+    std::function<void(AppAction action)> m_actionCallback;
     const char* m_argv0;
-    bool m_active = true;
     int m_framesRequested = 1;
     bool m_haveController = false;
     TextBoxRenderer m_renderer;
@@ -15,12 +17,14 @@ class GLMenuApp {
     DirView m_dirView;
     ModalMenu m_menu;
 
+    void runProgramWrapper(const char* program=nullptr, const char* argument=nullptr);
+    void itemSelected();
     void showMainMenu();
     void showOpenWithMenu();
 
 public:
-    explicit inline GLMenuApp(const char *argv0=nullptr)
-        : m_argv0(argv0)
+    explicit inline GLMenuApp(std::function<void(AppAction action)> actionCallback, const char *argv0=nullptr)
+        : m_actionCallback(actionCallback), m_argv0(argv0)
         , m_dirView(m_renderer, m_geometry)
         , m_menu   (m_renderer, m_geometry) {}
 
@@ -30,8 +34,6 @@ public:
     void shutdown();
     void draw(double dt);
     void handleEvent(AppEvent ev);
-    inline void quit() { m_active = false; }
-    inline bool active() const { return m_active; }
     inline int framesRequested() const { return m_framesRequested; }
     inline void requestFrame(int frames=1) { if (frames > m_framesRequested) { m_framesRequested = frames; } }
 };

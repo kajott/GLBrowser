@@ -146,7 +146,17 @@ int main(int argc, char* argv[]) {
         printf("OpenGL renderer: %s\n", glGetString(GL_RENDERER));
     #endif
 
-    static GLMenuApp app(argv[0]);
+    bool active = true;
+    auto actionCallback = [&] (AppAction action) {
+        switch (action) {
+            case AppAction::Quit:     active = false;          break;
+            case AppAction::Minimize: SDL_MinimizeWindow(win); break;
+            case AppAction::Restore:  SDL_RestoreWindow(win);  break;
+            default: break;
+        }
+    };
+
+    static GLMenuApp app(actionCallback, argv[0]);
     if (!app.init((argc > 1) ? argv[1] : nullptr)) {
         return 1;
     }
@@ -160,7 +170,7 @@ int main(int argc, char* argv[]) {
     FakeTypematic typematic(app);
 
     Uint64 prevTime = SDL_GetPerformanceCounter();
-    while (app.active()) {
+    while (active) {
         // wait for events, if we need to
         bool wait = !app.framesRequested();
         if (wait) {
@@ -198,7 +208,7 @@ int main(int argc, char* argv[]) {
                         case SDLK_y:         app.handleEvent(AppEvent::Y);        break;
                         case SDLK_TAB:       app.handleEvent(AppEvent::Select);   break;
                         case SDLK_ESCAPE:    app.handleEvent(AppEvent::Start);    break;
-                        case SDLK_q:         app.quit();                          break;
+                        case SDLK_q:         active = false;                      break;
                         default: break;
                     }
                     break;
@@ -241,7 +251,7 @@ int main(int argc, char* argv[]) {
                     }
                     break;
                 case SDL_QUIT:
-                    app.quit();
+                    active = false;
                     break;
                 default:
                     break;
@@ -255,6 +265,7 @@ int main(int argc, char* argv[]) {
         SDL_GL_SwapWindow(win);
     }
 
+    app.shutdown();
     SDL_GL_MakeCurrent(nullptr, nullptr);
     SDL_GL_DeleteContext(glctx);
     SDL_DestroyWindow(win);
