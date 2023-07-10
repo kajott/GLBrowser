@@ -15,6 +15,8 @@ class GLMenuApp {
     DirView m_dirView;
     ModalMenu m_menu;
 
+    void showOpenWithMenu();
+
 public:
     explicit inline GLMenuApp(const char *argv0=nullptr)
         : m_argv0(argv0)

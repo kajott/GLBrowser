@@ -11,6 +11,14 @@
 
 #include "app.h"
 
+namespace MenuItemID {
+    constexpr int Dismiss         = 0;
+    constexpr int CustomBase      = 0x10000;
+    constexpr int OpenWithDefault = CustomBase + 0;
+    constexpr int RunExecutable   = CustomBase + 1;
+    inline bool IsFileAssoc(int id) { return (id > 0) && (id < CustomBase); }
+};
+
 bool GLMenuApp::init(const char *initial) {
     glClearColor(0.125f, 0.25f, 0.375f, 1.0f);
     glEnable(GL_BLEND);
@@ -71,14 +79,37 @@ void GLMenuApp::draw(double dt) {
     } else if (m_haveController) {
         x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "A", "Select", controlBarColor, barBackOpaque);
         if (!m_dirView.atRoot()) { x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "B", "Parent Directory", controlBarColor, barBackOpaque); }
+        x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "X", "Open With", controlBarColor, barBackOpaque);
         //x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "START", "Menu", controlBarColor, barBackOpaque);
     } else {
         x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Enter", "Select", controlBarColor, barBackOpaque);
         if (!m_dirView.atRoot()) { x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Backspace", "Parent Directory", controlBarColor, barBackOpaque); }
+        x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Space", "Open With", controlBarColor, barBackOpaque);
         x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Q", "Quit", controlBarColor, barBackOpaque);
     }
 
     m_renderer.flush();
+}
+
+void GLMenuApp::showOpenWithMenu() {
+    m_menu.clear();
+    m_menu.setMainTitle(m_dirView.currentItemFullPath());
+    m_menu.setBoxTitle("Open With");
+    if (m_dirView.currentItem().isExec) {
+        m_menu.addItem(MenuItemID::RunExecutable, "Run");
+    }
+    m_menu.addSeparator();
+    FileAssocLookup(m_dirView.currentItem().extCode, [&] (const FileAssociation& assoc) -> bool {
+        m_menu.addItem(assoc.index, assoc.displayName);
+        return true;
+    });
+    m_menu.addSeparator();
+    m_menu.addItem(MenuItemID::OpenWithDefault, "System Default");
+    m_menu.addSeparator();
+    m_menu.addItem(0, "Cancel");
+    m_menu.avoidCurrentItem(m_dirView);
+    m_menu.activate();
+    m_dirView.deactivate();
 }
 
 void GLMenuApp::handleEvent(AppEvent ev) {
@@ -105,21 +136,9 @@ void GLMenuApp::handleEvent(AppEvent ev) {
         case AppEvent::A:
             if (m_dirView.currentItem().isDir) {
                 m_dirView.push();
-            }  // else: pop up file dialog (TODO)
+            }  // else: open with default application (TODO)
             break;
-        case AppEvent::X:
-            m_menu.clear();
-            m_menu.addControl(false, "Y", "Secret Control", -1, 2);
-            m_menu.setMainTitle(m_dirView.currentItemFullPath());
-            m_menu.setBoxTitle("Example Menu");
-            m_menu.addItem(1, "GLISS");
-            m_menu.addItem(2, "XnView");
-            m_menu.addSeparator();
-            m_menu.addItem(-1, "Cancel");
-            m_menu.avoidCurrentItem(m_dirView);
-            m_menu.activate();
-            m_dirView.deactivate();
-            break;
+        case AppEvent::X:       showOpenWithMenu(); break;
         default: break;
     }
 }
