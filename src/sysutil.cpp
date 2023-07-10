@@ -37,7 +37,7 @@ uint32_t extractExtCode(const char* path) {
         char c = *ext++;
         if (!c) { break; }
         if ((c >= 'A') && (c <= 'Z')) { c += 'a' - 'A'; }
-        code = (code << 8) | uint8_t(*ext);
+        code = (code << 8) | uint8_t(c);
     } while (code < (1u << 24));
     return code;
 }
