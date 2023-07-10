@@ -14,8 +14,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 bool DirItem::operator< (const DirItem& other) const {
-    if (isdir && !other.isdir) { return true; }
-    if (other.isdir && !isdir) { return false; }
+    if (isDir && !other.isDir) { return true; }
+    if (other.isDir && !isDir) { return false; }
     // case-insensitive string comparison; rolled fully by hand because
     // (a) C++ doesn't have that,
     // (b) neither does C (at least not universally available),
@@ -55,8 +55,8 @@ DirPanel::DirPanel(DirView& parent, const std::string& path, int x0, bool active
     if (isSubdir) {
         m_items.push_back(DirItem("", true, "\xE2\x97\x84 back"));
     }
-    ScanDirectory(path.c_str(), [&] (const char* name, bool isdir, bool isexec) {
-        m_items.push_back(DirItem(name, isdir, isexec));
+    ScanDirectory(path.c_str(), [&] (const char* name, bool isDir, bool isexec) {
+        m_items.push_back(DirItem(name, isDir, isexec));
     });
     std::sort(m_items.begin() + (isSubdir ? 1 : 0), m_items.end());
 
@@ -210,7 +210,7 @@ std::string DirView::currentItemFullPath() const {
 
 void DirView::push() {
     const DirItem& current = currentItem();
-    if (!current.isdir) { return; }
+    if (!current.isDir) { return; }
     if (current.name.empty()) { pop(); return; }
     m_panels.back().deactivate();
     m_panels.push_back(DirPanel(*this, PathJoin(currentDir(), current.name), m_panels.back().endX()));

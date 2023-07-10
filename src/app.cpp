@@ -103,7 +103,7 @@ void GLMenuApp::handleEvent(AppEvent ev) {
         case AppEvent::LS:       m_dirView.pop(); break;
         case AppEvent::RS:       m_dirView.push(); break;
         case AppEvent::A:
-            if (m_dirView.currentItem().isdir) {
+            if (m_dirView.currentItem().isDir) {
                 m_dirView.push();
             }  // else: pop up file dialog (TODO)
             break;
