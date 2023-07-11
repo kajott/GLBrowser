@@ -18,8 +18,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static constexpr Uint64 TypematicDelay    =  250u;
-static constexpr Sint16 AnalogSensitivity = 8192;
+static constexpr Uint64 TypematicDelay    =   150u;
+static constexpr Sint16 AnalogSensitivity = 16384;
 
 namespace FTDirection {
     constexpr int Left  = 0;
