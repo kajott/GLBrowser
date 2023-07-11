@@ -19,7 +19,7 @@ namespace MenuItemID {
     inline bool IsFileAssoc(int id) { return (id > 0); }
 };
 
-bool GLMenuApp::init(const char *initial) {
+bool GLBrowserApp::init(const char *initial) {
     glClearColor(0.125f, 0.25f, 0.375f, 1.0f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -30,11 +30,11 @@ bool GLMenuApp::init(const char *initial) {
     return true;
 }
 
-void GLMenuApp::shutdown() {
+void GLBrowserApp::shutdown() {
     m_renderer.shutdown();
 }
 
-void GLMenuApp::draw(double dt) {
+void GLBrowserApp::draw(double dt) {
     // process animations
     if (m_framesRequested > 0) { --m_framesRequested; }
     m_geometry.setTimeDelta(float(dt));
@@ -91,7 +91,7 @@ void GLMenuApp::draw(double dt) {
     m_renderer.flush();
 }
 
-void GLMenuApp::showMainMenu() {
+void GLBrowserApp::showMainMenu() {
     m_menu.clear();
     m_menu.setBoxTitle("Main Menu");
     m_menu.addItem(MenuItemID::QuitApplication, "Quit");
@@ -101,7 +101,7 @@ void GLMenuApp::showMainMenu() {
     m_dirView.deactivate();
 }
 
-void GLMenuApp::showOpenWithMenu() {
+void GLBrowserApp::showOpenWithMenu() {
     m_menu.clear();
     m_menu.setMainTitle(m_dirView.currentItemFullPath());
     m_menu.setBoxTitle("Open With");
@@ -122,7 +122,7 @@ void GLMenuApp::showOpenWithMenu() {
     m_dirView.deactivate();
 }
 
-void GLMenuApp::itemSelected() {
+void GLBrowserApp::itemSelected() {
     if (m_dirView.currentItem().isDir) {
         m_dirView.push();
     } else if (m_dirView.currentItem().isExec) {
@@ -138,13 +138,13 @@ void GLMenuApp::itemSelected() {
     }
 }
 
-void GLMenuApp::runProgramWrapper(const char* program, const char* argument) {
+void GLBrowserApp::runProgramWrapper(const char* program, const char* argument) {
     m_actionCallback(AppAction::Minimize);
     RunProgram(program, argument);
     m_actionCallback(AppAction::Restore);
 }
 
-void GLMenuApp::handleEvent(AppEvent ev) {
+void GLBrowserApp::handleEvent(AppEvent ev) {
     // handle modal menu events first
     ModalMenu::EventType me = m_menu.handleEvent(ev);
     if (me != ModalMenu::EventType::Inactive) {

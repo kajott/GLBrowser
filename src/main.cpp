@@ -37,12 +37,12 @@ namespace FTSource {
 };
 
 class FakeTypematic {
-    GLMenuApp& m_app;
+    GLBrowserApp& m_app;
     uint16_t m_buttons;
     Uint64 m_timeouts[14];
     void fireEvent(int button);
 public:
-    inline FakeTypematic(GLMenuApp& app) : m_app(app), m_buttons(0u) {}
+    inline FakeTypematic(GLBrowserApp& app) : m_app(app), m_buttons(0u) {}
     inline bool buttonsPressed() { return (m_buttons != 0u); }
     void setState(int button, bool state);
     inline void setAxis(int axis, Sint16 value) {
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
         }
     };
 
-    static GLMenuApp app(actionCallback, argv[0]);
+    static GLBrowserApp app(actionCallback, argv[0]);
     if (!app.init((argc > 1) ? argv[1] : nullptr)) {
         return 1;
     }

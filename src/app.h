@@ -7,7 +7,7 @@
 #include "dirview.h"
 #include "menu.h"
 
-class GLMenuApp {
+class GLBrowserApp {
     std::function<void(AppAction action)> m_actionCallback;
     const char* m_argv0;
     int m_framesRequested = 1;
@@ -23,7 +23,7 @@ class GLMenuApp {
     void showOpenWithMenu();
 
 public:
-    explicit inline GLMenuApp(std::function<void(AppAction action)> actionCallback, const char *argv0=nullptr)
+    explicit inline GLBrowserApp(std::function<void(AppAction action)> actionCallback, const char *argv0=nullptr)
         : m_actionCallback(actionCallback), m_argv0(argv0)
         , m_dirView(m_renderer, m_geometry)
         , m_menu   (m_renderer, m_geometry) {}
