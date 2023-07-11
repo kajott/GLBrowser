@@ -42,7 +42,7 @@ static const FileAssociationRegistryItem fileAssocRegistry[] = {
     { "Python",    EXE("python"),    "py" },
     { "Perl",      EXE("perl"),      "pl" },
     { "bash",      EXE("bash"),      "sh" },
-    { nullptr, },
+    { nullptr, nullptr, nullptr },
 };
 
 ///////////////////////////////////////////////////////////////////////////////

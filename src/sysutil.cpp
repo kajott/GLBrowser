@@ -217,7 +217,6 @@ bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)
     if (dir == INVALID_HANDLE_VALUE) { return false; }
     do {
         if (item.cFileName[0] && (item.cFileName[0] != '.') && !(item.dwFileAttributes & (FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM))) {
-            int fnlen = int(strlen(item.cFileName));
             bool isdir = !!(item.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
             callback(item.cFileName, isdir, !isdir && IsExeFile(item.cFileName));
         }

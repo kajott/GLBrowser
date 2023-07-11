@@ -2,6 +2,9 @@ cmake_minimum_required (VERSION 3.9)
 
 project (GLBrowser)
 
+set (CMAKE_C_STANDARD 99)
+set (CMAKE_CXX_STANDARD 11)
+
 if (WIN32)
     link_directories (SDL2_win32/lib/x64)
     set (SDL2_DIR SDL2_win32/cmake)
@@ -35,6 +38,15 @@ endif ()
 
 find_package (SDL2 REQUIRED)
 target_link_libraries (glbrowser PUBLIC SDL2)
+
+# strict compiler options
+if (MSVC)
+    target_compile_options (glbrowser PRIVATE /W4 /WX)
+else ()
+    target_compile_options (glbrowser PRIVATE -Wall -Wextra -pedantic -Werror -fwrapv)
+    # GCC -pedantic prevents compiling GLAD
+    set_property (SOURCE src/glad.c PROPERTY COMPILE_FLAGS -Wno-pedantic)
+endif ()
 
 # no idea why this is needed; isn't CMake supposed to do that automatically
 # in target_link_libraries()?!

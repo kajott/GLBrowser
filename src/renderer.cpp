@@ -360,7 +360,7 @@ uint32_t TextBoxRenderer::nextCodepoint(const char* &utf8string) {
 float TextBoxRenderer::textWidth(const char* text) {
     float w = 0.0f;
     const FontData::Glyph* g;
-    while ((g = getGlyph(nextCodepoint(text)))) { w += g->advance; }
+    while ((g = getGlyph(nextCodepoint(text))) != 0u) { w += g->advance; }
     return w;
 }
 
@@ -381,7 +381,7 @@ void TextBoxRenderer::alignText(float &x, float &y, float size, const char* text
 float TextBoxRenderer::text(float x, float y, float size, const char* text, uint8_t align, uint32_t colorUpper, uint32_t colorLower, float blur, float offset) {
     alignText(x, y, size, text, align);
     const FontData::Glyph* g;
-    while ((g = getGlyph(nextCodepoint(text)))) {
+    while ((g = getGlyph(nextCodepoint(text))) != 0u) {
         if (!g->space) {
             Vertex* v = newVertices(1, x + g->pos.x0 * size, y + g->pos.y0 * size, x + g->pos.x1 * size, y + g->pos.y1 * size);
             v[0].color = v[1].color = colorUpper;

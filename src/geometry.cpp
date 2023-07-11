@@ -40,7 +40,6 @@ void Geometry::setTimeDelta(float dt) {
 }
 
 int Geometry::animUpdate(float &value, float newValue) const {
-    float prev = value;
     value = newValue + _filterCoeff * (value - newValue);
     bool running = (std::abs(value - newValue) > 1E-3f);
     if (!running) { value = newValue; }

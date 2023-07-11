@@ -77,12 +77,12 @@ public:
     inline DirView(TextBoxRenderer& renderer, const Geometry& geometry)
         : m_renderer(renderer), m_geometry(geometry) {}
 
-    inline const bool atRoot()             const { return (m_panels.size() < 2u); }
-    inline const int xScroll()             const { return m_xScroll; }
+    inline bool atRoot()                   const { return (m_panels.size() < 2u); }
+    inline int xScroll()                   const { return m_xScroll; }
     inline const DirPanel& currentPanel()  const { return m_panels.back(); }
     inline const DirItem& currentItem()    const { return currentPanel().currentItem(); }
     inline const std::string& currentDir() const { return currentPanel().path(); }
-    std::string currentItemFullPath() const;
+    std::string currentItemFullPath()      const;
 
     inline void deactivate() { m_panels.back().deactivate(); }
     inline void activate()   { m_panels.back().activate(); }
