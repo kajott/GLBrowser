@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Martin J. Fiedler <keyj@emphy.de>
+// SPDX-License-Identifier: MIT
+
 #include <cstdint>
 #include <cstdlib>
 #include <cctype>

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2023 Martin J. Fiedler <keyj@emphy.de>
+# SPDX-License-Identifier: MIT
 from PIL import Image
 import json
 import math

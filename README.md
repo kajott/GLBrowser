@@ -1,6 +1,15 @@
-# OpenGL Directory List and Launcher
+# OpenGL Directory Browser
 
-(blah blah)
+GLBrowser is a fullscreen directory browser that can be used to open files
+with various applications. It runs on Windows and Linux and is a single-file
+application on the latter. The UI is rendered with OpenGL 3.3. The font is
+baked right into the executable file.
+
+At this point, the list of viable applications is rather short;
+in fact, this whole application is meant to be a frontend for my image viewer
+[GLISS](https://svn.emphy.de/scripts/trunk/gliss.cpp) with little use outside
+of that.
+
 
 ## Building (Linux)
 
