@@ -152,9 +152,9 @@ int main(int argc, char* argv[]) {
     bool active = true;
     auto actionCallback = [&] (AppAction action) {
         switch (action) {
-            case AppAction::Quit:     active = false;          break;
-            case AppAction::Minimize: SDL_MinimizeWindow(win); break;
-            case AppAction::Restore:  SDL_RestoreWindow(win);  break;
+            case AppAction::Quit:     active = false; break;
+            case AppAction::Minimize: SDL_PumpEvents(); SDL_MinimizeWindow(win); SDL_PumpEvents(); break;
+            case AppAction::Restore:  SDL_PumpEvents(); SDL_RestoreWindow(win);  SDL_PumpEvents(); break;
             default: break;
         }
     };
