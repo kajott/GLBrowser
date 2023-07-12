@@ -221,15 +221,18 @@ void GLBrowserApp::showFavMenu() {
 void GLBrowserApp::itemSelected() {
     if (m_dirView.currentItem().isDir) {
         m_dirView.push();
-    } else if (m_dirView.currentItem().isExec) {
+        return;
+    }
+    int assocIndex = 0;
+    FileAssocLookup(m_dirView.currentItem().extCode, [&] (const FileAssociation& assoc) -> bool {
+        assocIndex = assoc.index;
+        return false;
+    });
+    const FileAssociation& assoc = GetFileAssoc(assocIndex);
+    if (m_dirView.currentItem().isExec && assoc.allowExec) {
         runProgramWrapper(m_dirView.currentItemFullPath().c_str());
     } else {
-        int assocIndex = 0;
-        FileAssocLookup(m_dirView.currentItem().extCode, [&] (const FileAssociation& assoc) -> bool {
-            assocIndex = assoc.index;
-            return false;
-        });
-        runProgramWrapper(GetFileAssoc(assocIndex).executablePath.c_str(),
+        runProgramWrapper(assoc.executablePath.c_str(),
                           m_dirView.currentItemFullPath().c_str());
     }
 }

@@ -11,6 +11,7 @@
 struct FileAssociationRegistryItem {
     const char* displayName;
     const char* executableName;
+    bool        allowExec;
     const char* extensions;
 };
 

@@ -22,30 +22,30 @@
 #endif
 
 static const FileAssociationRegistryItem fileAssocRegistry[] = {
-    { "GLISS",     EXE("gliss"),     "/ jpg jpeg jpe" },
-    { "XnView",    EXE("xnview"),    "/ jpg jpeg jpe jfif png bmp tif tiff tga pcx gif" },
+    { "GLISS",     EXE("gliss"),     false, "/ jpg jpeg jpe" },
+    { "XnView",    EXE("xnview"),    false, "/ jpg jpeg jpe jfif png bmp tif tiff tga pcx gif" },
 
-    { "MPV",       EXE("mpv"),       "mp4 mov mkv webm mts m2ts m2t m2p mpg ogv wmv asf flv avi" },
-    { "MPC-HC",    EXE("mpc-hc64"),  "mp4 mov mkv webm mts m2ts m2t m2p mpg ogv wmv asf flv avi" },
-    { "VLC",       EXE("vlc"),       "mp4 mov mkv webm mts m2ts m2t m2p mpg ogv wmv asf flv avi" },
+    { "MPV",       EXE("mpv"),       false, "mp4 mov mkv webm mts m2ts m2t m2p mpg ogv wmv asf flv avi" },
+    { "MPC-HC",    EXE("mpc-hc64"),  false, "mp4 mov mkv webm mts m2ts m2t m2p mpg ogv wmv asf flv avi" },
+    { "VLC",       EXE("vlc"),       false, "mp4 mov mkv webm mts m2ts m2t m2p mpg ogv wmv asf flv avi" },
 
-    { "MuPDF",     EXE("mupdf"),     "pdf" },
+    { "MuPDF",     EXE("mupdf"),     false, "pdf" },
 
-    { "Vivaldi",   EXE("vivaldi"),   "/ htm html" },
-    { "Chrome",    EXE("chrome"),    "/ htm html" },
-    { "Chromium",  EXE("chromium"),  "/ htm html" },
-    { "Firefox",   EXE("firefox"),   "/ htm html" },
+    { "Vivaldi",   EXE("vivaldi"),   false, "/ htm html" },
+    { "Chrome",    EXE("chrome"),    false, "/ htm html" },
+    { "Chromium",  EXE("chromium"),  false, "/ htm html" },
+    { "Firefox",   EXE("firefox"),   false, "/ htm html" },
 
-    { "Notepad++", EXE("notepad++"), "txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
-    { "GEdit",     EXE("gedit"),     "txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
-    { "VS Code",   EXE("code"),    "/ txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
+    { "Notepad++", EXE("notepad++"), false,   "txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
+    { "GEdit",     EXE("gedit"),     false,   "txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
+    { "VS Code",   EXE("code"),      false, "/ txt md c cc cpp cxx h hh hpp hxx rs java cs kt js htm html py pl php rb sh pas dpr inc asm diz nfo json xml yaml ini conf" },
 
     // stuff that executes scripts is put last, so it never becomes the default
-    { "Python",    EXE("py"),        "py" },
-    { "Python",    EXE("python"),    "py" },
-    { "Perl",      EXE("perl"),      "pl" },
-    { "bash",      EXE("bash"),      "sh" },
-    { nullptr, nullptr, nullptr },
+    { "Python",    EXE("py"),        true,  "py" },
+    { "Python",    EXE("python"),    true,  "py" },
+    { "Perl",      EXE("perl"),      true,  "pl" },
+    { "bash",      EXE("bash"),      true,  "sh" },
+    { nullptr, nullptr, false, nullptr },
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -62,6 +62,7 @@ void FileAssocInit(const char* argv0) {
 
     FileAssociation assoc;
     assoc.displayName = assoc.executableName = assoc.extensions = nullptr;
+    assoc.allowExec = true;
     assoc.index = 0;
     assocList.push_back(assoc);
 
@@ -70,6 +71,7 @@ void FileAssocInit(const char* argv0) {
         if (assoc.executablePath.empty()) { continue; }
         assoc.displayName    = item->displayName;
         assoc.executableName = item->executableName;
+        assoc.allowExec      = item->allowExec;
         assoc.extensions     = item->extensions;
         assoc.index          = int(assocList.size());
         assocList.push_back(assoc);
