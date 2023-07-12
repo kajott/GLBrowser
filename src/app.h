@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
 #include <functional>
 
 #include "event.h"
@@ -19,11 +21,18 @@ class GLBrowserApp {
     Geometry m_geometry;
     DirView m_dirView;
     ModalMenu m_menu;
+    std::string m_favFile;
+    std::vector<std::string> m_favs;
 
+    bool isValidFavID(int id);
+    void loadFavs();
+    void saveFavs();
+    void addFav();
     void runProgramWrapper(const char* program=nullptr, const char* argument=nullptr);
     void itemSelected();
     void showMainMenu();
     void showOpenWithMenu();
+    void showFavMenu();
 
 public:
     explicit inline GLBrowserApp(std::function<void(AppAction action)> actionCallback, const char *argv0=nullptr)

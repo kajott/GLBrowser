@@ -92,10 +92,13 @@ void ModalMenu::setCursor(int pos) {
     m_resultID = m_items[m_cursor].id;
 }
 
-void ModalMenu::activate() {
+void ModalMenu::activate(int selectID) {
     if (m_active) { return; }
     finishLayout();
     setCursor(0);
+    for (int i = 0;  i < int(m_items.size());  ++i) {
+        if (m_items[i].id == selectID) { setCursor(i); break; }
+    }
     m_animCursorY = float(m_items[m_cursor].y + m_y0);
     float cx = float(m_x0) + 0.5f * float(m_width);
     m_boxTitleTextX = cx - 0.5f * m_boxTitleTextX;

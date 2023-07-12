@@ -78,7 +78,7 @@ public:
 
     void avoid(int y, int x0, int x1);
     void avoidCurrentItem(const DirView& dirView);
-    void activate();
+    void activate(int selectID=0x80000000);
 
     int animate();
     void draw();

@@ -21,6 +21,9 @@
 inline constexpr bool my_isalpha(char c)
     { return ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')); }
 
+inline constexpr bool my_isspace(char c)
+    { return (c == ' ') || (c == '\t') || (c == '\r') || (c == '\n') || (c == '\f') || (c == '\v'); }
+
 uint32_t extractExtCode(const char* path);
 inline uint32_t extractExtCode(const std::string& path) { return extractExtCode(path.c_str()); }
 
@@ -38,6 +41,8 @@ std::string PathDirName(const char* path);
 inline std::string PathDirName(const std::string& path)  { return PathDirName(path.c_str()); }
 
 std::string GetCurrentDir();
+
+std::string GetConfigDir();
 
 bool PathExists(const char* path);
 inline bool PathExists(const std::string& path)   { return PathExists(path.c_str()); }

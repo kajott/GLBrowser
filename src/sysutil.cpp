@@ -103,6 +103,8 @@ bool IsRoot(const char* path) {
     return !path || !path[0] || (ispathsep(path[0]) && !path[1]);
 }
 
+///// FindProgram API /////////////////////////////////////////////////////////
+
 static std::vector<std::string> searchDirs;
 
 void FindProgramInit(const char* additionalDir) {
@@ -160,7 +162,7 @@ std::string FindProgram(const char* name) {
         }
         RegCloseKey(hKey);
     }
-#endif
+#endif  // _WIN32
     return "";  // not found
 }
 
@@ -199,6 +201,10 @@ bool IsDirectory(const char* path) {
 bool IsExecutable(const char* path) {
     DWORD attr = GetFileAttributesA(path);
     return (attr != INVALID_FILE_ATTRIBUTES) && !(attr & FILE_ATTRIBUTE_DIRECTORY) && IsExeFile(path);
+}
+
+std::string GetConfigDir() {
+    return getenv("LOCALAPPDATA");
 }
 
 bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)> callback) {
@@ -305,6 +311,10 @@ bool IsDirectory(const char* path) {
 bool IsExecutable(const char* path) {
     struct stat st;
     return (stat(path, &st) == 0) && !S_ISDIR(st.st_mode) && ((st.st_mode & 0111) != 0);
+}
+
+std::string GetConfigDir() {
+    return PathJoin(getenv("HOME"), ".config");
 }
 
 bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)> callback) {

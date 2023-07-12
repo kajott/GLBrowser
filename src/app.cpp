@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2023 Martin J. Fiedler <keyj@emphy.de>
 // SPDX-License-Identifier: MIT
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <cstdio>
+#include <cstring>
 
 #include "glad.h"
 
@@ -14,13 +17,25 @@
 
 #include "app.h"
 
+constexpr const char* favFileName = "glbrowser.fav";
+
 namespace MenuItemID {
     constexpr int Dismiss         =  0;
     constexpr int QuitApplication = -1;
     constexpr int OpenWithDefault = -2;
     constexpr int RunExecutable   = -3;
-    inline bool IsFileAssoc(int id) { return (id > 0); }
+    constexpr int ShowFavMenu     = -4;
+    constexpr int AddFav          = -5;
+    constexpr int FavBase         = 0x10000;
+    constexpr int FavMask         = 0xF0000;
+    inline bool IsFileAssoc(int id) { return (id > 0) && (id <  FavBase); }
+    inline bool IsFav(int id)       { return             (id >= FavBase); }
+    inline int  GetFav(int id)      { return              id -  FavBase;  }
 };
+
+bool GLBrowserApp::isValidFavID(int id) {
+    return MenuItemID::IsFav(id) && (MenuItemID::GetFav(id) < int(m_favs.size()));
+}
 
 bool GLBrowserApp::init(const char *initial) {
     glClearColor(0.125f, 0.25f, 0.375f, 1.0f);
@@ -30,6 +45,7 @@ bool GLBrowserApp::init(const char *initial) {
     m_geometry.update(m_renderer.viewportWidth(), m_renderer.viewportHeight());
     m_dirView.navigate(initial ? initial : GetCurrentDir());
     FileAssocInit(m_argv0);
+    m_favFile = PathJoin(GetConfigDir(), favFileName);
     return true;
 }
 
@@ -83,21 +99,77 @@ void GLBrowserApp::draw(double dt) {
         x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "A", "Select", controlBarColor, barBackOpaque);
         if (!m_dirView.atRoot()) { x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "B", "Parent Directory", controlBarColor, barBackOpaque); }
         x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "X", "Open With", controlBarColor, barBackOpaque);
+        x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "Y", "Favorites", controlBarColor, barBackOpaque);
         x = m_renderer.control(x, y, m_geometry.textSize, 0, false, "START", "Menu", controlBarColor, barBackOpaque);
     } else {
         x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Enter", "Select", controlBarColor, barBackOpaque);
         if (!m_dirView.atRoot()) { x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Backspace", "Parent Directory", controlBarColor, barBackOpaque); }
         x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Space", "Open With", controlBarColor, barBackOpaque);
+        x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "RShift", "Favorites", controlBarColor, barBackOpaque);
         x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Q", "Quit", controlBarColor, barBackOpaque);
     }
 
     m_renderer.flush();
 }
 
+void GLBrowserApp::loadFavs() {
+    m_favs.clear();
+    FILE *f = fopen(m_favFile.c_str(), "r");
+    if (!f) { return; }
+    constexpr int lineBufferSize = 128;
+    char buffer[lineBufferSize];
+    std::string line;
+    auto flushLine = [&] () {
+        // strip trailing whitespace and comments
+        int validLen = 0;
+        for (int i = 0;  i < int(line.size());  ++i) {
+            if (line[i] == '#') { break; }  // comment
+            if (!my_isspace(line[i])) { validLen = i + 1; }
+        }
+        line.resize(validLen);
+        // add line (if not empty) and start over with a new one
+        if (!line.empty()) { m_favs.emplace_back(line); }
+        line.clear();
+    };
+    while (fgets(buffer, lineBufferSize, f) != nullptr) {
+        char *bufPos = buffer;
+        if (line.empty()) {  // strip leading whitespace (but at line start only!)
+            while (*bufPos && my_isspace(*bufPos)) { ++bufPos; }
+        }
+        line.append(bufPos);
+        int len = int(strlen(bufPos));
+        if ((len > 0) && (bufPos[len-1] == '\n')) {
+            flushLine();
+        }
+    }
+    flushLine();
+    fclose(f);
+}
+
+void GLBrowserApp::saveFavs() {
+    FILE *f = fopen(m_favFile.c_str(), "w");
+    if (!f) { return; }
+    fprintf(f, "# GLBrowser favorites file\n");
+    for (const auto& fav : m_favs) {
+        fprintf(f, "%s\n", fav.c_str());
+    }
+    fclose(f);
+}
+
+void GLBrowserApp::addFav() {
+    std::string newFav = m_dirView.currentItemFullPath();
+    for (const auto& fav : m_favs) {
+        if (fav == newFav) { return; }
+    }
+    m_favs.emplace_back(newFav);
+}
+
 void GLBrowserApp::showMainMenu() {
     m_menu.clear();
     m_menu.setBoxTitle("Main Menu");
     m_menu.addItem(MenuItemID::QuitApplication, "Quit");
+    m_menu.addSeparator();
+    m_menu.addItem(MenuItemID::ShowFavMenu, "Favorites");
     m_menu.addSeparator();
     m_menu.addItem(0, "Cancel");
     m_menu.activate();
@@ -122,6 +194,27 @@ void GLBrowserApp::showOpenWithMenu() {
     m_menu.addItem(0, "Cancel");
     m_menu.avoidCurrentItem(m_dirView);
     m_menu.activate();
+    m_dirView.deactivate();
+}
+
+void GLBrowserApp::showFavMenu() {
+    loadFavs();
+    std::string path = m_dirView.currentItemFullPath();
+    m_menu.clear();
+    m_menu.setMainTitle(path);
+    m_menu.setBoxTitle("Favorites");
+    int selectID = 0;
+    for (int i = 0;  i < int(m_favs.size());  ++i) {
+        m_menu.addItem(MenuItemID::FavBase + i, m_favs[i]);
+        if (m_favs[i] == path) { selectID = i; }
+    }
+    m_menu.addSeparator();
+    m_menu.addItem(MenuItemID::AddFav, "Add Favorite");
+    m_menu.addSeparator();
+    m_menu.addItem(0, "Cancel");
+    m_menu.addControl(true, "Space", "Remove Favorite", MenuItemID::FavMask, MenuItemID::FavBase);
+    m_menu.addControl(false, "X",    "Remove Favorite", MenuItemID::FavMask, MenuItemID::FavBase);
+    m_menu.activate(MenuItemID::FavBase + selectID);
     m_dirView.deactivate();
 }
 
@@ -156,13 +249,20 @@ void GLBrowserApp::handleEvent(AppEvent ev) {
                 case MenuItemID::QuitApplication: m_actionCallback(AppAction::Quit); break;
                 case MenuItemID::RunExecutable:   runProgramWrapper(m_dirView.currentItemFullPath().c_str()); break;
                 case MenuItemID::OpenWithDefault: runProgramWrapper(nullptr, m_dirView.currentItemFullPath().c_str()); break;
+                case MenuItemID::ShowFavMenu:     showFavMenu(); break;
+                case MenuItemID::AddFav:          addFav(); saveFavs(); showFavMenu(); break;
                 default:
                     if (MenuItemID::IsFileAssoc(m_menu.result())) {
                         runProgramWrapper(GetFileAssoc(m_menu.result()).executablePath.c_str(),
                                           m_dirView.currentItemFullPath().c_str());
+                    } else if (isValidFavID(m_menu.result())) {
+                        m_dirView.navigate(m_favs[MenuItemID::GetFav(m_menu.result())]);
                     }
                     break;
             }
+        } else if ((ev == AppEvent::X) && isValidFavID(m_menu.result())) {
+            m_favs.erase(m_favs.begin() + MenuItemID::GetFav(m_menu.result()));
+            saveFavs(); showFavMenu();
         }
         if (!m_menu.active()) {
             m_dirView.activate();
@@ -185,6 +285,7 @@ void GLBrowserApp::handleEvent(AppEvent ev) {
         case AppEvent::RS:       m_dirView.push(); break;
         case AppEvent::A:        itemSelected(); break;
         case AppEvent::X:        showOpenWithMenu(); break;
+        case AppEvent::Y:        showFavMenu(); break;
         case AppEvent::Start:    showMainMenu(); break;
         default: break;
     }
