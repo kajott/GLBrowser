@@ -18,7 +18,8 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static constexpr Uint64 TypematicDelay    =   150u;
+static constexpr Uint64 TypematicDelay    =   250u;
+static constexpr Uint64 TypematicRate     =    50u;
 static constexpr Sint16 AnalogSensitivity = 16384;
 
 namespace FTDirection {
@@ -43,7 +44,7 @@ class FakeTypematic {
     GLBrowserApp& m_app;
     uint16_t m_buttons;
     Uint64 m_timeouts[14];
-    void fireEvent(int button);
+    void fireEvent(int button, bool initial);
 public:
     inline FakeTypematic(GLBrowserApp& app) : m_app(app), m_buttons(0u) {}
     inline bool buttonsPressed() { return (m_buttons != 0u); }
@@ -55,7 +56,7 @@ public:
     bool update();
 };
 
-void FakeTypematic::fireEvent(int button) {
+void FakeTypematic::fireEvent(int button, bool initial) {
     if (button >= FTSource::Trigger) {
         switch (button) {
             case FTSource::Trigger + FTDirection::Left:  m_app.handleEvent(AppEvent::LT); break;
@@ -71,17 +72,16 @@ void FakeTypematic::fireEvent(int button) {
             default: break;
         }
     }
-    m_timeouts[button] = SDL_GetTicks64() + TypematicDelay;
+    m_timeouts[button] = SDL_GetTicks64() + (initial ? TypematicDelay : TypematicRate);
 }
 
 void FakeTypematic::setState(int button, bool state) {
     uint16_t mask = 1u << button;
-//printf("state %2d %d -> %d\n", button, (m_buttons >> button) & 1, state);
     if (!state) {
         m_buttons &= ~mask;
     } else if (!(m_buttons & mask)) {
         m_buttons |= mask;
-        fireEvent(button);
+        fireEvent(button, true);
     }
 }
 
@@ -91,7 +91,7 @@ bool FakeTypematic::update() {
     // only up to 12 -- no actual typematic for the triggers, just state tracking!
     for (int button = 0;  button < 12;  ++button) {
         if ((m_buttons & (1u << button)) && (now >= m_timeouts[button])) {
-            fireEvent(button);
+            fireEvent(button, false);
             res = true;
         }
     }
