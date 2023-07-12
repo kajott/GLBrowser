@@ -166,8 +166,10 @@ ModalMenu::EventType ModalMenu::handleEvent(AppEvent ev) {
     switch (ev) {
         case AppEvent::Up:       setCursor(m_cursor - 1); return EventType::Cursor;
         case AppEvent::Down:     setCursor(m_cursor + 1); return EventType::Cursor;
+        case AppEvent::LT:
         case AppEvent::PageUp:
         case AppEvent::Home:     setCursor(0); return EventType::Cursor;
+        case AppEvent::RT:
         case AppEvent::PageDown:
         case AppEvent::End:      setCursor(9999); return EventType::Cursor;
         case AppEvent::A:        m_confirmed = true; m_active = false; return EventType::Confirm;
