@@ -53,9 +53,20 @@ void GLBrowserApp::shutdown() {
     m_renderer.shutdown();
 }
 
-void GLBrowserApp::draw(double dt) {
-    // process animations
+bool GLBrowserApp::draw(double dt) {
     if (m_framesRequested > 0) { --m_framesRequested; }
+
+    // wait for running program
+    if (m_runningProgram) {
+        if (PollForProgram(m_runningProgram)) {
+            m_actionCallback(AppAction::Restore);
+        } else {
+            requestFrame();
+            return false;
+        }
+    }
+
+    // process animations
     m_geometry.setTimeDelta(float(dt));
     if (m_dirView.animate() + m_menu.animate()) { requestFrame(); }
 
@@ -111,6 +122,7 @@ void GLBrowserApp::draw(double dt) {
     }
 
     m_renderer.flush();
+    return true;
 }
 
 void GLBrowserApp::loadFavs() {
@@ -239,9 +251,9 @@ void GLBrowserApp::itemSelected() {
 }
 
 void GLBrowserApp::runProgramWrapper(const char* program, const char* argument) {
+    WaitForProgram(m_runningProgram);
     m_actionCallback(AppAction::Minimize);
-    RunProgram(program, argument);
-    m_actionCallback(AppAction::Restore);
+    m_runningProgram = RunProgram(program, argument);
 }
 
 void GLBrowserApp::handleEvent(AppEvent ev) {

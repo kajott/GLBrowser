@@ -9,6 +9,7 @@
 
 #include "event.h"
 #include "renderer.h"
+#include "sysutil.h"
 #include "dirview.h"
 #include "menu.h"
 
@@ -16,6 +17,7 @@ class GLBrowserApp {
     std::function<void(AppAction action)> m_actionCallback;
     const char* m_argv0;
     int m_framesRequested = 1;
+    ProgramHandle m_runningProgram = 0;
     bool m_haveController = false;
     TextBoxRenderer m_renderer;
     Geometry m_geometry;
@@ -44,7 +46,7 @@ public:
 
     bool init(const char* initial);
     void shutdown();
-    void draw(double dt);
+    bool draw(double dt);
     void handleEvent(AppEvent ev);
     inline int framesRequested() const { return m_framesRequested; }
     inline void requestFrame(int frames=1) { if (frames > m_framesRequested) { m_framesRequested = frames; } }

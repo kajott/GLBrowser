@@ -153,8 +153,8 @@ int main(int argc, char* argv[]) {
     auto actionCallback = [&] (AppAction action) {
         switch (action) {
             case AppAction::Quit:     active = false; break;
-            case AppAction::Minimize: SDL_PumpEvents(); SDL_MinimizeWindow(win); SDL_PumpEvents(); break;
-            case AppAction::Restore:  SDL_PumpEvents(); SDL_RestoreWindow(win);  SDL_PumpEvents(); break;
+            case AppAction::Minimize: SDL_MinimizeWindow(win); break;
+            case AppAction::Restore:  SDL_RestoreWindow(win);  break;
             default: break;
         }
     };
@@ -263,9 +263,12 @@ int main(int argc, char* argv[]) {
 
         // finally, draw the app
         Uint64 now = SDL_GetPerformanceCounter();
-        app.draw(wait ? 0.0 : (double(now - prevTime) / double(SDL_GetPerformanceFrequency())));
+        if (app.draw(wait ? 0.0 : (double(now - prevTime) / double(SDL_GetPerformanceFrequency())))) {
+            SDL_GL_SwapWindow(win);
+        } else {
+            SDL_Delay(100);
+        }
         prevTime = now;
-        SDL_GL_SwapWindow(win);
     }
 
     app.shutdown();

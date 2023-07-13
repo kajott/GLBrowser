@@ -65,6 +65,9 @@ void FindProgramInit(const char* additionalDir=nullptr);
 inline void FindProgramInit(const std::string& additionalDir) { FindProgramInit(additionalDir.c_str()); }
 std::string FindProgram(const char* name);
 
-bool RunProgram(const char* program=nullptr, const char* argument=nullptr);
-inline bool RunProgram(const std::string& program, const std::string& argument)
+typedef uintptr_t ProgramHandle;
+ProgramHandle RunProgram(const char* program=nullptr, const char* argument=nullptr);
+inline ProgramHandle RunProgram(const std::string& program, const std::string& argument)
     { return RunProgram(program.c_str(), argument.c_str()); }
+void WaitForProgram(ProgramHandle prog);
+bool PollForProgram(ProgramHandle &prog);
