@@ -234,7 +234,7 @@ bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)
     return true;
 }
 
-bool RunProgram(const char* program, const char* argument) {
+ProgramHandle RunProgram(const char* program, const char* argument) {
     if (program && program[0]) {  // run specific program
         // glue together a command line
         std::string cmdline("\"");
@@ -261,9 +261,7 @@ bool RunProgram(const char* program, const char* argument) {
 
         // wait for the process to terminate
         CloseHandle(pi.hThread);
-        WaitForSingleObject(pi.hProcess, INFINITE);
-        CloseHandle(pi.hProcess);
-        return true;
+        return ProgramHandle(pi.hProcess);
     } else if (argument && argument[0]) {  // use system default application
         // prepare ShellExecuteEx invocation
         SHELLEXECUTEINFOA ei;
@@ -274,14 +272,24 @@ bool RunProgram(const char* program, const char* argument) {
         ei.fMask = SEE_MASK_NOCLOSEPROCESS;
 
         // run the process and wait for completion
-        if (!ShellExecuteExA(&ei)) { return false; }
-        if (ei.hProcess) {
-            WaitForSingleObject(ei.hProcess, INFINITE);
-            CloseHandle(ei.hProcess);
-        }
-        return true;
+        if (!ShellExecuteExA(&ei)) { return 0u; }
+        return ProgramHandle(ei.hProcess);
     }
-    return false;
+    return 0u;
+}
+
+void WaitForProgram(ProgramHandle prog) {
+    if (!prog) { return; }
+    WaitForSingleObject(HANDLE(prog), INFINITE);
+    CloseHandle(HANDLE(prog));
+}
+
+bool PollForProgram(ProgramHandle& prog) {
+    if (!prog) { return true; }
+    if (WaitForSingleObject(HANDLE(prog), 0) == WAIT_TIMEOUT) { return false; }
+    CloseHandle(HANDLE(prog));
+    prog = 0u;
+    return true;
 }
 
 #else // POSIX ////////////////////////////////////////////////////////////////
@@ -335,12 +343,12 @@ bool ScanDirectory(const char* path, std::function<void(const char*, bool, bool)
     return true;
 }
 
-bool RunProgram(const char* program, const char* argument) {
+ProgramHandle RunProgram(const char* program, const char* argument) {
     if (argument && !argument[0]) { argument = nullptr; }
 
     // pick a universal default application
     if (!program || !program[0]) {
-        if (!argument) { return false; }
+        if (!argument) { return 0u; }
         #ifdef __APPLE__
             program = "open";
         #else
@@ -350,12 +358,8 @@ bool RunProgram(const char* program, const char* argument) {
 
     // do the fork-exec-wait dance
     pid_t childPID = fork();
-    if (childPID < 0) { return false; }
-    if (childPID) {
-        int status = 0;
-        waitpid(childPID, &status, 0);
-        return WIFEXITED(status) && (WEXITSTATUS(status) != 0xBE);
-    } else {
+    if (childPID < 0) { return 0u; }
+    if (!childPID) {
         char * const argv[3] = { const_cast<char*>(program), const_cast<char*>(argument), nullptr };
         execv(program, argv);
         fprintf(stderr, "\n***** child process execv() failed *****\ncommand line:  %s", program);
@@ -363,7 +367,18 @@ bool RunProgram(const char* program, const char* argument) {
         perror("\nerror message");
         _exit(0xBE);
     }
-    return false;
+    return ProgramHandle(childPID);
+}
+
+void WaitForProgram(ProgramHandle prog) {
+    if (!prog) { return; }
+    waitpid(pid_t(prog), nullptr, 0);
+}
+
+bool PollForProgram(ProgramHandle &prog) {
+    if (!prog) { return true; }
+    if (waitpid(pid_t(prog), nullptr, WNOHANG) > 0) { prog = 0u; }
+    return (prog != 0u);
 }
 
 #endif // POSIX ///////////////////////////////////////////////////////////////
