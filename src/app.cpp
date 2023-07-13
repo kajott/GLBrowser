@@ -106,6 +106,7 @@ void GLBrowserApp::draw(double dt) {
         if (!m_dirView.atRoot()) { x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Backspace", "Parent Directory", controlBarColor, barBackOpaque); }
         x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Space", "Open With", controlBarColor, barBackOpaque);
         x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "RShift", "Favorites", controlBarColor, barBackOpaque);
+        x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Esc", "Menu", controlBarColor, barBackOpaque);
         x = m_renderer.control(x, y, m_geometry.textSize, 0, true, "Q", "Quit", controlBarColor, barBackOpaque);
     }
 
