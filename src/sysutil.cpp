@@ -377,7 +377,7 @@ void WaitForProgram(ProgramHandle prog) {
 
 bool PollForProgram(ProgramHandle &prog) {
     if (!prog) { return true; }
-    if (waitpid(pid_t(prog), nullptr, WNOHANG) > 0) { prog = 0u; }
+    if (waitpid(pid_t(prog), nullptr, WNOHANG) != 0) { prog = 0u; }
     return (prog != 0u);
 }
 
